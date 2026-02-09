@@ -15,8 +15,8 @@
     <!-- 3. BABEL (Untuk JSX) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- 4. SUPABASE JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 4. SUPABASE JS (Updated to unpkg for better UMD support) -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
     <!-- 5. SHEETJS (Untuk Export Excel) -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
@@ -52,9 +52,20 @@
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpa2VuZWN6bHl2Ympwcm5oeHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MDM1MTYsImV4cCI6MjA4NjE3OTUxNn0.qRdHiFNMOnxYDOLz9Q-CsistIrYn0GT7HXX4FNkD1d4"; // Isi Anon Key Supabase Anda
         
         // Inisialisasi Client Supabase
-        let supabase = null;
-        if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let supabaseClient = null;
+        try {
+            if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+                // Check if the global variable 'supabase' exists (from the script tag)
+                if (typeof supabase !== 'undefined') {
+                    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                } else if (window.supabase) {
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                } else {
+                    console.error("Supabase library not loaded properly.");
+                }
+            }
+        } catch (error) {
+            console.error("Error initializing Supabase:", error);
         }
 
         const { useState, useEffect } = React;
@@ -82,7 +93,6 @@
             Loader: <path d="M21 12a9 9 0 1 1-6.219-8.56"/>,
             Eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
             X: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
-            // Fixed: Added Fragment <></> around multiple SVG elements
             Move: <><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/></>
         };
 
