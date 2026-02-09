@@ -15,7 +15,7 @@
     <!-- 3. BABEL (Untuk JSX) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- 4. SUPABASE JS (Updated to unpkg for better UMD support) -->
+    <!-- 4. SUPABASE JS (Versi UMD yang stabil) -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
     <!-- 5. SHEETJS (Untuk Export Excel) -->
@@ -48,24 +48,19 @@
         // ==========================================
         // KONFIGURASI SUPABASE (WAJIB DIISI)
         // ==========================================
-        const SUPABASE_URL = "https://qikeneczlyvbjprnhxyl.supabase.co"; // Isi URL Project Supabase Anda
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpa2VuZWN6bHl2Ympwcm5oeHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MDM1MTYsImV4cCI6MjA4NjE3OTUxNn0.qRdHiFNMOnxYDOLz9Q-CsistIrYn0GT7HXX4FNkD1d4"; // Isi Anon Key Supabase Anda
+        const SUPABASE_URL = "https://qikeneczlyvbjprnhxyl.supabase.co"; // URL Project
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpa2VuZWN6bHl2Ympwcm5oeHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MDM1MTYsImV4cCI6MjA4NjE3OTUxNn0.qRdHiFNMOnxYDOLz9Q-CsistIrYn0GT7HXX4FNkD1d4"; // Anon Key
         
         // Inisialisasi Client Supabase
         let supabaseClient = null;
         try {
-            if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-                // Check if the global variable 'supabase' exists (from the script tag)
-                if (typeof supabase !== 'undefined') {
-                    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                } else if (window.supabase) {
-                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                } else {
-                    console.error("Supabase library not loaded properly.");
-                }
+            if (typeof supabase !== 'undefined') {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            } else {
+                console.error("Library Supabase gagal dimuat.");
             }
         } catch (error) {
-            console.error("Error initializing Supabase:", error);
+            console.error("Error inisialisasi Supabase:", error);
         }
 
         const { useState, useEffect } = React;
@@ -98,7 +93,6 @@
 
         // --- BANK SOAL (40 Soal HOTS) ---
         const INITIAL_QUESTIONS = [
-             // === BAGIAN 1: PILIHAN GANDA (MC) - Analisis & Evaluasi ===
              { id: 1, category: 'mc', type: 'choice', question: "(Analisis Kasus) Seorang pelamar kerja ditolak oleh perusahaan multinasional meskipun memiliki IPK 4.0. Pihak HRD menemukan komentar provokatif di akun media sosial anonim pelamar tersebut dari 5 tahun lalu. Kesimpulan paling logis dari kasus ini adalah...", options: ["Perusahaan melanggar hak privasi karena menelusuri akun anonim.", "Jejak digital bersifat abadi (persisten) dan anonimitas di internet hanyalah ilusi semu.", "Pelamar seharusnya menghapus akun tersebut tepat sehari sebelum wawancara.", "Media sosial tidak mencerminkan kepribadian asli seseorang, hanya hiburan."], correctAnswer: 1 },
              { id: 2, category: 'mc', type: 'choice', question: "(Evaluasi Keamanan) Budi memposting foto Boarding Pass tiket pesawatnya di Instagram Story dengan menutupi nama penumpangnya menggunakan stiker. Mengapa tindakan Budi dinilai MASIH BERISIKO tinggi?", options: ["Karena teman-temannya bisa merasa iri dan melakukan cyberbullying.", "Karena kode Barcode/QR pada tiket masih dapat dipindai untuk mengungkapkan data sensitif (NIK, PNR).", "Karena maskapai penerbangan akan membatalkan tiket secara otomatis jika terdeteksi online.", "Karena kualitas foto akan menurun (pecah) saat diunggah."], correctAnswer: 1 },
              { id: 3, category: 'mc', type: 'choice', question: "(Logika Teknis) Seorang siswa menggunakan 'Incognito Mode' di laboratorium komputer sekolah untuk mengakses situs game yang diblokir. Namun, admin sekolah tetap mengetahui aktivitas tersebut. Mengapa hal ini bisa terjadi?", options: ["Karena siswa lupa menghapus riwayat penelusuran (History).", "Karena Incognito hanya mencegah penyimpanan data di perangkat lokal, bukan mengenkripsi lalu lintas data di jaringan ISP/Router.", "Karena admin sekolah memasang kamera CCTV di belakang layar.", "Karena Incognito Mode sedang mengalami gangguan server global."], correctAnswer: 1 },
@@ -111,12 +105,8 @@
              { id: 10, category: 'mc', type: 'choice', question: "(Sistem Komputer) Ketika kamu mencari 'Sepatu Lari' di Google, tiba-tiba iklan sepatu muncul di Instagram dan Facebook-mu. Teknologi apa yang bekerja di latar belakang untuk menghubungkan data ini?", options: ["Virus Trojan yang mencuri data.", "Cookies pihak ketiga (Third-party Cookies) dan Algoritma Pelacakan Lintas Situs.", "Kamera HP yang merekam bola mata pengguna.", "Admin media sosial memantau aktivitasmu secara manual."], correctAnswer: 1 },
              { id: 11, category: 'mc', type: 'choice', question: "(Keamanan Jaringan) Mengapa melakukan transaksi Mobile Banking menggunakan Wi-Fi publik gratis (tanpa VPN) sangat tidak disarankan?", options: ["Karena koneksi Wi-Fi publik biasanya lambat.", "Karena jaringan publik rentan terhadap serangan 'Man-in-the-Middle' (Penyadapan/Sniffing) data yang tidak terenkripsi.", "Karena akan dikenakan biaya tambahan oleh pemilik Wi-Fi.", "Karena baterai HP akan lebih cepat habis."], correctAnswer: 1 },
              { id: 12, category: 'mc', type: 'choice', question: "(Etika Digital) Memposting foto teman yang sedang tidur dengan mulut terbuka sebagai bahan lelucon (meme) tanpa izin, secara etika melanggar prinsip...", options: ["Hak Cipta (Copyright).", "Consent (Persetujuan) dan Penghormatan Privasi.", "Kebebasan Berpendapat.", "Kreativitas Digital."], correctAnswer: 1 },
-             
-             // === BAGIAN 2A: BENAR/SALAH (BS) ===
              { id: 13, category: 'bs', type: 'choice', question: "(B/S) Mengaktifkan 'Mode Pesawat' (Airplane Mode) saat mengambil foto menjamin foto tersebut tidak akan memiliki metadata lokasi (Geotagging) sama sekali.", options: ["Benar", "Salah (Jika GPS aktif sebelumnya, koordinat terakhir bisa tersimpan)"], correctAnswer: 1 },
              { id: 14, category: 'bs', type: 'choice', question: "(B/S) Jejak digital pasif (seperti riwayat pencarian dan lokasi GPS) seringkali lebih berbahaya daripada jejak aktif karena tercipta tanpa kesadaran penuh pengguna.", options: ["Benar", "Salah"], correctAnswer: 0 },
-
-             // === BAGIAN 2B: MENJODOHKAN (MATCH) - Analogi & Definisi ===
              { id: 15, category: 'match', type: 'choice', question: "Pasangkan konsep 'Phishing' dengan analogi dunia nyata yang paling tepat:", options: ["Pencuri yang membobol rumah paksa", "Penipu yang menyamar jadi petugas bank untuk minta PIN", "Penguntit yang mengikuti diam-diam", "Tukang pos yang salah alamat"], correctAnswer: 1 },
              { id: 16, category: 'match', type: 'choice', question: "Pasangkan jenis jejak digital dengan contoh konkretnya:", options: ["Jejak Pasif - Komentar di YouTube", "Jejak Aktif - Log Server ISP", "Jejak Pasif - Alamat IP & Metadata Foto", "Jejak Aktif - Iklan yang muncul otomatis"], correctAnswer: 2 },
              { id: 17, category: 'match', type: 'choice', question: "Manakah pasangan sebab-akibat keamanan siber yang logis?", options: ["Password 123456 - Akun sulit diretas", "Mengaktifkan 2FA - Lapisan keamanan ganda", "Klik Link Sembarang - Smartphone jadi cepat", "Update OS - HP jadi lambat"], correctAnswer: 1 },
@@ -130,8 +120,6 @@
              { id: 25, category: 'match', type: 'choice', question: "Jodohkan ekstensi file dengan potensi risikonya:", options: [".txt - Risiko Tinggi Virus", ".jpg - Risiko Sedang", ".exe / .apk - Risiko Tinggi (Executable)", ".mp3 - Risiko Sangat Tinggi"], correctAnswer: 2 },
              { id: 26, category: 'match', type: 'choice', question: "Pasangkan UU ITE dengan jenis pelanggaran utamanya:", options: ["Pasal 27 - Pencemaran Nama Baik / Kesusilaan", "Pasal 27 - Pencurian Hardware", "Pasal 28 - Pelanggaran Lampu Merah", "Pasal 29 - Korupsi"], correctAnswer: 0 },
              { id: 27, category: 'match', type: 'choice', question: "Jodohkan istilah 'Digital Detox' dengan tujuannya:", options: ["Menambah Followers", "Mengurangi kecanduan & menjaga kesehatan mental", "Meningkatkan penjualan online", "Mempercepat koneksi internet"], correctAnswer: 1 },
-
-             // === BAGIAN 3: URAIAN / ESSAY (ESSAY) - Analisis Mendalam ===
              { id: 28, category: 'essay', type: 'essay', question: "Studi Kasus: Seorang lulusan terbaik gagal diterima kerja karena tim HRD menemukan jejak digitalnya sering berkata kasar di kolom komentar game online 7 tahun lalu. Analisislah mengapa perusahaan modern menganggap 'Jejak Digital' sama pentingnya dengan 'Ijazah Akademik'!", keywords: ["karakter", "reputasi", "integritas", "budaya kerja", "risiko", "citra perusahaan"], minKeywords: 3, maxScore: 10 },
              { id: 29, category: 'essay', type: 'essay', question: "Analisis Kritis: Fitur GPS pada aplikasi Ojek Online memberikan kenyamanan (akurasi penjemputan) tetapi juga ancaman privasi (pelacakan pola hidup). Jelaskan bagaimana kamu menyeimbangkan 'Kenyamanan vs Privasi' dalam kasus ini!", keywords: ["izin akses", "hanya saat digunakan", "matikan gps", "privasi", "data lokasi", "kesadaran"], minKeywords: 3, maxScore: 10 },
              { id: 30, category: 'essay', type: 'essay', question: "Problem Solving: Temanmu panik karena ada akun palsu (impersonation) yang menggunakan foto dan namanya untuk menipu orang lain meminjam uang. Rumuskan 3 langkah darurat yang harus segera dilakukan temanmu!", keywords: ["lapor", "report akun", "klarifikasi publik", "bukti screenshot", "blokir", "bantuan teman"], minKeywords: 3, maxScore: 10 },
@@ -561,8 +549,8 @@
             }, []);
 
             const fetchDetails = async () => {
-                if (supabase) {
-                    const { data, error } = await supabase
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient
                         .from('student_answers')
                         .select('*')
                         .eq('exam_result_id', resultId);
@@ -626,9 +614,9 @@
 
             const fetchResults = async () => {
                 setLoading(true);
-                if (supabase) {
+                if (supabaseClient) {
                     try {
-                        const { data, error } = await supabase
+                        const { data, error } = await supabaseClient
                             .from('exam_results')
                             .select('*')
                             .order('created_at', { ascending: false });
@@ -719,7 +707,7 @@
                         )}
                     </div>
                     
-                    {!supabase && (
+                    {!supabaseClient && (
                         <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
                             <strong>Info Mode Demo:</strong> Anda belum memasukkan URL Supabase di kodingan. Data saat ini hanya disimpan di Local Storage browser ini saja. Edit file HTML baris 48 untuk koneksi database.
                         </div>
@@ -749,6 +737,21 @@
             const [isSubmitting, setIsSubmitting] = useState(false);
 
             useEffect(() => {
+                // Check local storage for session
+                const savedSession = localStorage.getItem('cbt_session');
+                if (savedSession) {
+                    const sessionData = JSON.parse(savedSession);
+                    setUser(sessionData);
+                    if (sessionData.role === 'admin') {
+                        setView('admin');
+                    } else {
+                        // Restore dashboard view for students
+                        setView('dashboard');
+                    }
+                }
+            }, []);
+
+            useEffect(() => {
                 if (view === 'exam' && timeLeft > 0) {
                     const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
                     return () => clearInterval(timer);
@@ -760,15 +763,25 @@
             const handleLogin = (name, role, password, extraData) => {
                 if (role === 'admin') {
                     if (password === 'admin123') {
-                        setUser({ name: 'Guru Admin', role: 'admin' });
+                        const adminUser = { name: 'Guru Admin', role: 'admin' };
+                        setUser(adminUser);
+                        localStorage.setItem('cbt_session', JSON.stringify(adminUser));
                         setView('admin');
                     } else {
                         alert("Password Salah!");
                     }
                 } else {
-                    setUser({ name, role, ...extraData });
+                    const studentUser = { name, role, ...extraData };
+                    setUser(studentUser);
+                    localStorage.setItem('cbt_session', JSON.stringify(studentUser));
                     setView('dashboard');
                 }
+            };
+
+            const handleLogout = () => {
+                localStorage.removeItem('cbt_session');
+                setUser(null);
+                setView('login');
             };
 
             const startExam = () => {
@@ -858,9 +871,9 @@
                 setScore(finalScore);
 
                 // 2. Simpan ke Database
-                if (supabase) {
+                if (supabaseClient) {
                     // A. Simpan Header (Rekap)
-                    const { data: resultData, error: resultError } = await supabase
+                    const { data: resultData, error: resultError } = await supabaseClient
                         .from('exam_results')
                         .insert([{
                             name: user.name,
@@ -880,7 +893,9 @@
                             ...ans
                         }));
 
-                        await supabase.from('student_answers').insert(finalAnswersPayload);
+                        await supabaseClient.from('student_answers').insert(finalAnswersPayload);
+                    } else {
+                        console.error("Gagal menyimpan rekap:", resultError);
                     }
                 } else {
                     // Fallback Local Storage
@@ -896,6 +911,9 @@
                     localStorage.setItem('cbt_local_results', JSON.stringify(localResults));
                 }
 
+                // Clear session storage on finish
+                localStorage.removeItem('cbt_session');
+
                 setIsSubmitting(false);
                 setView('result');
             };
@@ -906,7 +924,7 @@
                     {view === 'dashboard' && <StudentDashboard user={user} onStart={startExam} />}
                     {view === 'exam' && <ExamInterface questions={questions} answers={answers} setAnswers={setAnswers} onSubmit={submitExam} timeLeft={timeLeft} isSubmitting={isSubmitting} />}
                     {view === 'result' && <ResultScreen score={score} user={user} onHome={() => setView('login')} />}
-                    {view === 'admin' && <AdminPanel onLogout={() => setView('login')} />}
+                    {view === 'admin' && <AdminPanel onLogout={handleLogout} />}
                 </div>
             );
         }
