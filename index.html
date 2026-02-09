@@ -32,6 +32,12 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .scroll-smooth { scroll-behavior: smooth; }
+        
+        /* Drag & Drop Styles */
+        .draggable-source { cursor: grab; }
+        .draggable-source:active { cursor: grabbing; }
+        .drop-zone { transition: all 0.2s ease; }
+        .drop-zone.active { border-color: #4f46e5; background-color: #eef2ff; transform: scale(1.02); }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -42,8 +48,8 @@
         // ==========================================
         // KONFIGURASI SUPABASE (WAJIB DIISI)
         // ==========================================
-        const SUPABASE_URL = ""; // Isi URL Project Supabase Anda
-        const SUPABASE_ANON_KEY = ""; // Isi Anon Key Supabase Anda
+        const SUPABASE_URL = "https://qikeneczlyvbjprnhxyl.supabase.co"; // Isi URL Project Supabase Anda
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpa2VuZWN6bHl2Ympwcm5oeHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MDM1MTYsImV4cCI6MjA4NjE3OTUxNn0.qRdHiFNMOnxYDOLz9Q-CsistIrYn0GT7HXX4FNkD1d4"; // Isi Anon Key Supabase Anda
         
         // Inisialisasi Client Supabase
         let supabase = null;
@@ -54,7 +60,6 @@
         const { useState, useEffect } = React;
 
         // --- ICON COMPONENTS ---
-        // Fixed: Added Fragments <></> for icons with multiple paths
         const Icon = ({ path, className, fill="none" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
                 {path}
@@ -76,52 +81,60 @@
             Download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></>,
             Loader: <path d="M21 12a9 9 0 1 1-6.219-8.56"/>,
             Eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
-            X: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>
+            X: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
+            // Fixed: Added Fragment <></> around multiple SVG elements
+            Move: <><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/></>
         };
 
-        // --- BANK SOAL (40 Soal) ---
+        // --- BANK SOAL (40 Soal HOTS) ---
         const INITIAL_QUESTIONS = [
-             { id: 1, type: 'choice', question: "1. (Analisis Kasus) Rina gugur seleksi beasiswa karena komentar kasar di akun anonim lama. Kesimpulan?", options: ["Panitia melanggar privasi.", "Jejak digital bersifat abadi dan bisa dilacak.", "Rina harusnya hapus akun.", "Medsos bukan karakter asli."], correctAnswer: 1 },
-             { id: 2, type: 'choice', question: "2. (Keamanan) Bahaya memposting foto Boarding Pass tiket pesawat?", options: ["Teman iri.", "Barcode mengandung data pribadi (NIK) yg bisa dicuri.", "Tiket batal otomatis.", "Foto pecah."], correctAnswer: 1 },
-             { id: 3, type: 'choice', question: "3. (Teknis) Fakta tentang 'Incognito Mode'?", options: ["Sembunyi dari ISP.", "Lokasi GPS mati.", "Hanya tidak simpan history di perangkat lokal.", "Anti virus."], correctAnswer: 2 },
-             { id: 4, type: 'choice', question: "4. (Dampak) Bahaya 'Sharenting' (Orang tua share foto anak)?", options: ["Anak jadi artis.", "Hilangnya hak privasi & risiko penyalahgunaan foto.", "Memori penuh.", "Anak sombong."], correctAnswer: 1 },
-             { id: 5, type: 'choice', question: "5. (Konsep) Email lamaran (A) & History Maps (B). Jenis jejak?", options: ["A=Pasif, B=Aktif.", "A=Aktif, B=Pasif.", "Semua Pasif.", "Semua Aktif."], correctAnswer: 1 },
-             { id: 6, type: 'choice', question: "6. (Evaluasi) Link 'kemdikbud-kuota.xyz' di WA. Sikap?", options: ["Klik.", "Share.", "Analisis domain (bukan .go.id = Phishing).", "Isi data."], correctAnswer: 2 },
-             { id: 7, type: 'choice', question: "7. Kenapa hapus postingan tidak jamin jejak hilang?", options: ["Tombol rusak.", "Ada screenshot orang lain / backup server.", "Memori tak terbatas.", "Dilarang."], correctAnswer: 1 },
-             { id: 8, type: 'choice', question: "8. Siapa bertanggung jawab hukum atas cyberbullying akun palsu?", options: ["Medsos.", "Sekolah.", "Pemilik akun (pelaku).", "Korban."], correctAnswer: 2 },
-             { id: 9, type: 'choice', question: "9. Cara bersihkan jejak digital sebelum lamar kerja?", options: ["Hapus semua akun.", "Self-Googling & hapus konten negatif.", "Ganti nama.", "Spam status positif."], correctAnswer: 1 },
-             { id: 10, type: 'choice', question: "10. Fungsi 'Cookies' browser?", options: ["Curi password.", "Simpan preferensi (login/belanja).", "Lambatkan PC.", "Hapus history."], correctAnswer: 1 },
-             { id: 11, type: 'choice', question: "11. Risiko WiFi publik untuk M-Banking?", options: ["Lambat.", "Sniffing (Penyadapan data).", "Bayar.", "Boros baterai."], correctAnswer: 1 },
-             { id: 12, type: 'choice', question: "12. Posting foto aib teman tanpa izin?", options: ["Lucu.", "Langgar etika (Consent).", "Boleh asal tidak SARA.", "Boleh asal dihapus."], correctAnswer: 1 },
-             { id: 13, type: 'choice', question: "13. Kenapa iklan medsos sesuai obrolan kita?", options: ["Kebetulan.", "Algoritma profiling (Targeted Ads).", "Sadap kamera.", "Admin manual."], correctAnswer: 1 },
-             { id: 14, type: 'choice', question: "14. Cegah Doxing (sebar data pribadi)?", options: ["Jangan punya teman.", "Batasi info pribadi di profil publik.", "Balas dendam.", "Lapor polisi."], correctAnswer: 1 },
-             { id: 15, type: 'choice', question: "15. 'Jejak Digital = Mata Uang Baru' artinya?", options: ["Bisa belanja.", "Reputasi online bernilai tinggi untuk karir.", "Dapat uang tunai.", "Bayar online."], correctAnswer: 1 },
-             { id: 16, type: 'choice', question: "16. Apa itu 2FA (Two-Factor Authentication)?", options: ["2 Password sama.", "2 HP.", "Password + Kode OTP (Lapis kedua).", "Login 2 orang."], correctAnswer: 2 },
-             { id: 17, type: 'choice', question: "17. Ciri website aman transaksi (SSL)?", options: ["Banyak iklan.", "HTTPS & Gembok.", "Warna biru.", "Minta PIN."], correctAnswer: 1 },
-             { id: 18, type: 'choice', question: "18. Membanjiri pesan sampah disebut?", options: ["Phishing", "Spamming", "Hacking", "Skimming"], correctAnswer: 1 },
-             { id: 19, type: 'choice', question: "19. Mengaku karya orang lain sebagai milik sendiri?", options: ["Inspirasi", "Plagiarisme", "Kolaborasi", "Fair Use"], correctAnswer: 1 },
-             { id: 20, type: 'choice', question: "20. Password paling kuat?", options: ["admin123", "Nama123", "P4ssW0rd!", "Kombinasi Rumit (!@#)"], correctAnswer: 3 },
-             { id: 21, type: 'choice', question: "21. (B/S) Mode Pesawat menghapus jejak digital internal HP.", options: ["Benar", "Salah"], correctAnswer: 1 },
-             { id: 22, type: 'choice', question: "22. (B/S) Tutup tab = Hapus history permanen.", options: ["Benar", "Salah"], correctAnswer: 1 },
-             { id: 23, type: 'choice', question: "23. (B/S) Password sama semua akun itu aman.", options: ["Benar", "Salah"], correctAnswer: 1 },
-             { id: 24, type: 'choice', question: "24. (B/S) Email 5 tahun lalu masih tersimpan di server.", options: ["Benar", "Salah"], correctAnswer: 0 },
-             { id: 25, type: 'choice', question: "25. (B/S) VPN mengenkripsi koneksi internet.", options: ["Benar", "Salah"], correctAnswer: 0 },
-             { id: 26, type: 'choice', question: "26. Cyberstalking adalah...", options: ["Main game.", "Menguntit aktivitas online orang secara obsesif.", "Belajar online.", "Belanja."], correctAnswer: 1 },
-             { id: 27, type: 'choice', question: "27. Langkah pertama jika akun di-hack?", options: ["Buat baru.", "Diam.", "Reset password & nyalakan 2FA.", "Lapor polisi."], correctAnswer: 2 },
-             { id: 28, type: 'choice', question: "28. Digital Wellness adalah...", options: ["Servis HP.", "Keseimbangan hidup & teknologi.", "Aplikasi sehat.", "Olahraga."], correctAnswer: 1 },
-             { id: 29, type: 'choice', question: "29. Risiko klik 'Setuju' tanpa baca S&K?", options: ["Meledak.", "Tak sadar beri izin data ke perusahaan.", "Cepat.", "Aman."], correctAnswer: 1 },
-             { id: 30, type: 'choice', question: "30. Sebar Hoax langgar prinsip...", options: ["Kreativitas", "Literasi & Etika", "Kecepatan", "Ekonomi"], correctAnswer: 1 },
-             // ESSAY
-             { id: 31, type: 'essay', question: "31. Analisis mengapa universitas cek jejak digital pelamar?", keywords: ["karakter", "reputasi", "integritas", "etika", "citra"], minKeywords: 3, maxScore: 10 },
-             { id: 32, type: 'essay', question: "32. Jelaskan dilema Kenyamanan vs Privasi pada GPS Ojol!", keywords: ["mudah", "lacak", "privasi", "data lokasi", "disalahgunakan"], minKeywords: 3, maxScore: 10 },
-             { id: 33, type: 'essay', question: "33. 3 Langkah jika ada akun palsu (impersonation) pakai namamu?", keywords: ["lapor", "report", "blokir", "klarifikasi", "screenshot"], minKeywords: 3, maxScore: 10 },
-             { id: 34, type: 'essay', question: "34. Apakah jejak pasif lebih bahaya dari aktif? Argumenmu!", keywords: ["tanpa sadar", "profiling", "tersembunyi", "sadar", "kontrol"], minKeywords: 3, maxScore: 10 },
-             { id: 35, type: 'essay', question: "35. Slogan 'Think Before You Post' & maknanya?", keywords: ["pikir", "masa depan", "bijak", "saring", "jejak"], minKeywords: 2, maxScore: 10 },
-             { id: 36, type: 'essay', question: "36. Kenapa dilarang pakai Tanggal Lahir sbg PIN?", keywords: ["mudah ditebak", "data umum", "lemah", "identitas"], minKeywords: 3, maxScore: 10 },
-             { id: 37, type: 'essay', question: "37. Dampak hukum Hate Speech (UU ITE)?", keywords: ["hukum", "penjara", "denda", "uu ite", "pencemaran"], minKeywords: 3, maxScore: 10 },
-             { id: 38, type: 'essay', question: "38. Beda Block vs Report?", keywords: ["block", "tutup akses", "report", "lapor", "pelanggaran"], minKeywords: 3, maxScore: 10 },
-             { id: 39, type: 'essay', question: "39. Terima file .exe mencurigakan di email, sikapmu?", keywords: ["virus", "malware", "jangan buka", "hapus"], minKeywords: 2, maxScore: 10 },
-             { id: 40, type: 'essay', question: "40. Opini: Sekolah boleh sita HP untuk cek chat bullying?", keywords: ["privasi", "hak", "aturan", "bullying", "batas"], minKeywords: 2, maxScore: 10 },
+             // === BAGIAN 1: PILIHAN GANDA (MC) - Analisis & Evaluasi ===
+             { id: 1, category: 'mc', type: 'choice', question: "(Analisis Kasus) Seorang pelamar kerja ditolak oleh perusahaan multinasional meskipun memiliki IPK 4.0. Pihak HRD menemukan komentar provokatif di akun media sosial anonim pelamar tersebut dari 5 tahun lalu. Kesimpulan paling logis dari kasus ini adalah...", options: ["Perusahaan melanggar hak privasi karena menelusuri akun anonim.", "Jejak digital bersifat abadi (persisten) dan anonimitas di internet hanyalah ilusi semu.", "Pelamar seharusnya menghapus akun tersebut tepat sehari sebelum wawancara.", "Media sosial tidak mencerminkan kepribadian asli seseorang, hanya hiburan."], correctAnswer: 1 },
+             { id: 2, category: 'mc', type: 'choice', question: "(Evaluasi Keamanan) Budi memposting foto Boarding Pass tiket pesawatnya di Instagram Story dengan menutupi nama penumpangnya menggunakan stiker. Mengapa tindakan Budi dinilai MASIH BERISIKO tinggi?", options: ["Karena teman-temannya bisa merasa iri dan melakukan cyberbullying.", "Karena kode Barcode/QR pada tiket masih dapat dipindai untuk mengungkapkan data sensitif (NIK, PNR).", "Karena maskapai penerbangan akan membatalkan tiket secara otomatis jika terdeteksi online.", "Karena kualitas foto akan menurun (pecah) saat diunggah."], correctAnswer: 1 },
+             { id: 3, category: 'mc', type: 'choice', question: "(Logika Teknis) Seorang siswa menggunakan 'Incognito Mode' di laboratorium komputer sekolah untuk mengakses situs game yang diblokir. Namun, admin sekolah tetap mengetahui aktivitas tersebut. Mengapa hal ini bisa terjadi?", options: ["Karena siswa lupa menghapus riwayat penelusuran (History).", "Karena Incognito hanya mencegah penyimpanan data di perangkat lokal, bukan mengenkripsi lalu lintas data di jaringan ISP/Router.", "Karena admin sekolah memasang kamera CCTV di belakang layar.", "Karena Incognito Mode sedang mengalami gangguan server global."], correctAnswer: 1 },
+             { id: 4, category: 'mc', type: 'choice', question: "(Analisis Dampak) Fenomena 'Sharenting' (Orang tua membagikan foto anak secara berlebihan) sering dianggap sepele. Namun, risiko jangka panjang terbesar bagi 'Identitas Digital' anak di masa depan adalah...", options: ["Anak menjadi terlalu terkenal dan sulit bergaul.", "Anak kehilangan hak atas privasinya sendiri dan berisiko mengalami penyalahgunaan data biometrik.", "Memori penyimpanan awan (Cloud Storage) orang tua menjadi penuh.", "Anak akan tumbuh menjadi pribadi yang narsis."], correctAnswer: 1 },
+             { id: 5, category: 'mc', type: 'choice', question: "(Perbandingan Konsep) Perhatikan dua aktivitas berikut: (A) Mengirim email lamaran pekerjaan. (B) Aplikasi peta merekam rute perjalanan harianmu di latar belakang. Analisis yang tepat mengenai klasifikasi jejak digital keduanya adalah...", options: ["(A) adalah Jejak Pasif, sedangkan (B) adalah Jejak Aktif.", "(A) adalah Jejak Aktif (Sadar), sedangkan (B) adalah Jejak Pasif (Tanpa Sadar).", "Keduanya merupakan Jejak Digital Pasif.", "Keduanya merupakan Jejak Digital Aktif."], correctAnswer: 1 },
+             { id: 6, category: 'mc', type: 'choice', question: "(Literasi Digital) Kamu menerima pesan WhatsApp: 'Kuota Belajar Gratis Kemdikbud! Klik: http://kuota-kemdikbud-gratis.xyz'. Langkah nalar kritis pertama yang harus dilakukan sebelum bertindak adalah...", options: ["Segera klik tautan tersebut sebelum masa berlaku habis.", "Meneruskan (Forward) ke grup kelas agar teman-teman juga mendapatkannya.", "Menganalisis domain URL. Karena menggunakan '.xyz' dan bukan '.go.id', maka indikasi kuat Phishing.", "Mengisi data nama dan nomor HP untuk membuktikan kebenarannya."], correctAnswer: 2 },
+             { id: 7, category: 'mc', type: 'choice', question: "(Konsep Data) Mengapa tindakan menghapus (delete) postingan di media sosial tidak menjamin jejak digital tersebut hilang 100% dari internet?", options: ["Karena tombol hapus di aplikasi seringkali mengalami kerusakan teknis.", "Karena konten mungkin sudah di-screenshot orang lain atau tersimpan di server backup penyedia layanan (Mirroring).", "Karena internet memiliki kapasitas penyimpanan tak terbatas.", "Karena pemerintah melarang penghapusan data digital."], correctAnswer: 1 },
+             { id: 8, category: 'mc', type: 'choice', question: "(Hukum & Etika) Jika terjadi kasus cyberbullying menggunakan akun palsu (fake account), siapakah subjek hukum yang paling bertanggung jawab menurut UU ITE?", options: ["Penyedia platform media sosial (seperti Instagram/Twitter).", "Pihak sekolah karena kurang pengawasan.", "Pemilik asli akun tersebut, karena jejak digital (IP Address/Device ID) dapat dilacak secara forensik.", "Korban, karena terlalu sensitif menanggapi komentar."], correctAnswer: 2 },
+             { id: 9, category: 'mc', type: 'choice', question: "(Strategi) Langkah paling logis dan efektif untuk melakukan 'Manajemen Reputasi Online' sebelum memasuki dunia kerja adalah...", options: ["Menghapus permanen seluruh akun media sosial agar tidak bisa dilacak.", "Melakukan 'Self-Googling' untuk audit, menghapus konten negatif, dan memperbanyak konten karya positif.", "Mengganti nama asli dengan nama samaran di semua dokumen resmi.", "Membuat ratusan status positif dalam satu malam."], correctAnswer: 1 },
+             { id: 10, category: 'mc', type: 'choice', question: "(Sistem Komputer) Ketika kamu mencari 'Sepatu Lari' di Google, tiba-tiba iklan sepatu muncul di Instagram dan Facebook-mu. Teknologi apa yang bekerja di latar belakang untuk menghubungkan data ini?", options: ["Virus Trojan yang mencuri data.", "Cookies pihak ketiga (Third-party Cookies) dan Algoritma Pelacakan Lintas Situs.", "Kamera HP yang merekam bola mata pengguna.", "Admin media sosial memantau aktivitasmu secara manual."], correctAnswer: 1 },
+             { id: 11, category: 'mc', type: 'choice', question: "(Keamanan Jaringan) Mengapa melakukan transaksi Mobile Banking menggunakan Wi-Fi publik gratis (tanpa VPN) sangat tidak disarankan?", options: ["Karena koneksi Wi-Fi publik biasanya lambat.", "Karena jaringan publik rentan terhadap serangan 'Man-in-the-Middle' (Penyadapan/Sniffing) data yang tidak terenkripsi.", "Karena akan dikenakan biaya tambahan oleh pemilik Wi-Fi.", "Karena baterai HP akan lebih cepat habis."], correctAnswer: 1 },
+             { id: 12, category: 'mc', type: 'choice', question: "(Etika Digital) Memposting foto teman yang sedang tidur dengan mulut terbuka sebagai bahan lelucon (meme) tanpa izin, secara etika melanggar prinsip...", options: ["Hak Cipta (Copyright).", "Consent (Persetujuan) dan Penghormatan Privasi.", "Kebebasan Berpendapat.", "Kreativitas Digital."], correctAnswer: 1 },
+             
+             // === BAGIAN 2A: BENAR/SALAH (BS) ===
+             { id: 13, category: 'bs', type: 'choice', question: "(B/S) Mengaktifkan 'Mode Pesawat' (Airplane Mode) saat mengambil foto menjamin foto tersebut tidak akan memiliki metadata lokasi (Geotagging) sama sekali.", options: ["Benar", "Salah (Jika GPS aktif sebelumnya, koordinat terakhir bisa tersimpan)"], correctAnswer: 1 },
+             { id: 14, category: 'bs', type: 'choice', question: "(B/S) Jejak digital pasif (seperti riwayat pencarian dan lokasi GPS) seringkali lebih berbahaya daripada jejak aktif karena tercipta tanpa kesadaran penuh pengguna.", options: ["Benar", "Salah"], correctAnswer: 0 },
+
+             // === BAGIAN 2B: MENJODOHKAN (MATCH) - Analogi & Definisi ===
+             { id: 15, category: 'match', type: 'choice', question: "Pasangkan konsep 'Phishing' dengan analogi dunia nyata yang paling tepat:", options: ["Pencuri yang membobol rumah paksa", "Penipu yang menyamar jadi petugas bank untuk minta PIN", "Penguntit yang mengikuti diam-diam", "Tukang pos yang salah alamat"], correctAnswer: 1 },
+             { id: 16, category: 'match', type: 'choice', question: "Pasangkan jenis jejak digital dengan contoh konkretnya:", options: ["Jejak Pasif - Komentar di YouTube", "Jejak Aktif - Log Server ISP", "Jejak Pasif - Alamat IP & Metadata Foto", "Jejak Aktif - Iklan yang muncul otomatis"], correctAnswer: 2 },
+             { id: 17, category: 'match', type: 'choice', question: "Manakah pasangan sebab-akibat keamanan siber yang logis?", options: ["Password 123456 - Akun sulit diretas", "Mengaktifkan 2FA - Lapisan keamanan ganda", "Klik Link Sembarang - Smartphone jadi cepat", "Update OS - HP jadi lambat"], correctAnswer: 1 },
+             { id: 18, category: 'match', type: 'choice', question: "Jodohkan istilah 'Doxing' dengan definisi operasionalnya:", options: ["Menebak password akun", "Menyebarkan data pribadi (alamat/No HP) untuk intimidasi", "Mengambil alih akun game", "Menjual barang palsu"], correctAnswer: 1 },
+             { id: 19, category: 'match', type: 'choice', question: "Pasangkan indikator keamanan URL dengan maknanya:", options: ["HTTPS (Gembok) - Komunikasi data terenkripsi", "HTTP - Sangat Aman untuk Transaksi", "Domain .xyz - Situs Pemerintah Resmi", "Warna Merah - Website Terpercaya"], correctAnswer: 0 },
+             { id: 20, category: 'match', type: 'choice', question: "Jodohkan teknik 'Social Engineering' dengan metodenya:", options: ["Menggunakan software canggih", "Memanipulasi psikologis manusia (rasa takut/penasaran)", "Memutus kabel internet", "Mencuri sinyal satelit"], correctAnswer: 1 },
+             { id: 21, category: 'match', type: 'choice', question: "Pasangkan pelanggaran etika dengan istilahnya:", options: ["Mengutip tanpa sumber - Fair Use", "Mengambil karya orang & aku-aku - Plagiarisme", "Menulis email - Spamming", "Sopan santun - Cyberbullying"], correctAnswer: 1 },
+             { id: 22, category: 'match', type: 'choice', question: "Manakah pasangan praktik keamanan password yang BURUK?", options: ["Password - Tanggal Lahir Lengkap", "Password - Kalimat Panjang (Passphrase)", "Password - Kombinasi Simbol", "Password - Berbeda tiap akun"], correctAnswer: 0 },
+             { id: 23, category: 'match', type: 'choice', question: "Jodohkan istilah 'Digital Footprint' dengan metafora ekonominya:", options: ["Mata Uang Baru (Reputasi bernilai ekonomi)", "Sampah Daur Ulang", "Jejak di Pantai (Mudah hilang)", "Uang Kripto"], correctAnswer: 0 },
+             { id: 24, category: 'match', type: 'choice', question: "Pasangkan fitur privasi medsos dengan fungsinya:", options: ["Block - Melaporkan konten ilegal", "Mute - Menyembunyikan postingan tanpa memutus pertemanan", "Report - Menutup jalur komunikasi", "Unfollow - Menghapus akun"], correctAnswer: 1 },
+             { id: 25, category: 'match', type: 'choice', question: "Jodohkan ekstensi file dengan potensi risikonya:", options: [".txt - Risiko Tinggi Virus", ".jpg - Risiko Sedang", ".exe / .apk - Risiko Tinggi (Executable)", ".mp3 - Risiko Sangat Tinggi"], correctAnswer: 2 },
+             { id: 26, category: 'match', type: 'choice', question: "Pasangkan UU ITE dengan jenis pelanggaran utamanya:", options: ["Pasal 27 - Pencemaran Nama Baik / Kesusilaan", "Pasal 27 - Pencurian Hardware", "Pasal 28 - Pelanggaran Lampu Merah", "Pasal 29 - Korupsi"], correctAnswer: 0 },
+             { id: 27, category: 'match', type: 'choice', question: "Jodohkan istilah 'Digital Detox' dengan tujuannya:", options: ["Menambah Followers", "Mengurangi kecanduan & menjaga kesehatan mental", "Meningkatkan penjualan online", "Mempercepat koneksi internet"], correctAnswer: 1 },
+
+             // === BAGIAN 3: URAIAN / ESSAY (ESSAY) - Analisis Mendalam ===
+             { id: 28, category: 'essay', type: 'essay', question: "Studi Kasus: Seorang lulusan terbaik gagal diterima kerja karena tim HRD menemukan jejak digitalnya sering berkata kasar di kolom komentar game online 7 tahun lalu. Analisislah mengapa perusahaan modern menganggap 'Jejak Digital' sama pentingnya dengan 'Ijazah Akademik'!", keywords: ["karakter", "reputasi", "integritas", "budaya kerja", "risiko", "citra perusahaan"], minKeywords: 3, maxScore: 10 },
+             { id: 29, category: 'essay', type: 'essay', question: "Analisis Kritis: Fitur GPS pada aplikasi Ojek Online memberikan kenyamanan (akurasi penjemputan) tetapi juga ancaman privasi (pelacakan pola hidup). Jelaskan bagaimana kamu menyeimbangkan 'Kenyamanan vs Privasi' dalam kasus ini!", keywords: ["izin akses", "hanya saat digunakan", "matikan gps", "privasi", "data lokasi", "kesadaran"], minKeywords: 3, maxScore: 10 },
+             { id: 30, category: 'essay', type: 'essay', question: "Problem Solving: Temanmu panik karena ada akun palsu (impersonation) yang menggunakan foto dan namanya untuk menipu orang lain meminjam uang. Rumuskan 3 langkah darurat yang harus segera dilakukan temanmu!", keywords: ["lapor", "report akun", "klarifikasi publik", "bukti screenshot", "blokir", "bantuan teman"], minKeywords: 3, maxScore: 10 },
+             { id: 31, category: 'essay', type: 'essay', question: "Evaluasi: Banyak orang merasa aman karena 'tidak punya rahasia'. Bantahlah argumen tersebut dengan menjelaskan bahaya 'Profiling Data' dari jejak digital pasif (seperti riwayat belanja dan lokasi)!", keywords: ["manipulasi", "target iklan", "pencurian identitas", "rekayasa sosial", "prediksi perilaku", "data agregat"], minKeywords: 3, maxScore: 10 },
+             { id: 32, category: 'essay', type: 'essay', question: "Kreasi: Buatlah sebuah kalimat slogan kampanye tentang 'Etika Berinternet' yang menargetkan remaja, lalu jelaskan pesan filosofis di balik slogan buatanmu!", keywords: ["pikir", "jari", "masa depan", "jejak", "positif", "bijak", "saring"], minKeywords: 2, maxScore: 10 },
+             { id: 33, category: 'essay', type: 'essay', question: "Analisis Keamanan: Mengapa menggunakan Tanggal Lahir sebagai PIN atau Password dianggap sebagai 'Dosa Besar' dalam keamanan siber? Jelaskan kaitannya dengan teknik 'Social Engineering'!", keywords: ["data publik", "mudah ditebak", "rekayasa sosial", "profiling", "lemah", "brute force"], minKeywords: 3, maxScore: 10 },
+             { id: 34, category: 'essay', type: 'essay', question: "Hukum: Jelaskan bagaimana sebuah komentar pendek di media sosial (\"hate speech\") dapat berujung pada penjara menurut UU ITE di Indonesia? Apa unsur yang dilanggar?", keywords: ["pencemaran nama baik", "ujaran kebencian", "sara", "pasal 27", "pasal 28", "pidana", "digital"], minKeywords: 3, maxScore: 10 },
+             { id: 35, category: 'essay', type: 'essay', question: "Komparasi: Jelaskan perbedaan fungsi strategis antara fitur 'Block' dan 'Report'! Dalam situasi apa kamu harus memilih Report daripada sekadar Block?", keywords: ["block memutus", "report melapor", "pelanggaran komunitas", "tindakan admin", "berbahaya", "ilegal"], minKeywords: 3, maxScore: 10 },
+             { id: 36, category: 'essay', type: 'essay', question: "Studi Kasus: Kamu menerima email dari pengirim tak dikenal dengan subjek 'HADIAH MENANG' dan lampiran file berekstensi '.exe'. Analisis risiko apa yang terjadi jika kamu mengunduh file tersebut!", keywords: ["malware", "virus", "ransomware", "executable", "pencurian data", "merusak sistem"], minKeywords: 3, maxScore: 10 },
+             { id: 37, category: 'essay', type: 'essay', question: "Opini Kritis: Sekolah berencana menyita HP siswa untuk memeriksa chat pribadi demi mencegah bullying. Setujukah kamu? Berikan argumen berdasarkan hak privasi vs keamanan sekolah!", keywords: ["privasi siswa", "batas wewenang", "hak asasi", "prosedur", "consent", "alternatif edukasi"], minKeywords: 2, maxScore: 10 },
+             { id: 38, category: 'essay', type: 'essay', question: "Konsep Baru: Apa yang dimaksud dengan 'Digital Legacy' (Warisan Digital)? Mengapa penting bagi kita untuk mengatur siapa yang boleh mengakses akun kita setelah kita meninggal?", keywords: ["data pasca mati", "penyalahgunaan", "kenangan", "akses ahli waris", "memorialization", "keamanan"], minKeywords: 2, maxScore: 10 },
+             { id: 39, category: 'essay', type: 'essay', question: "Analisis Sistem: Bagaimana 'Algoritma Media Sosial' menciptakan 'Filter Bubble' yang membuat kita merasa semua orang sepemikiran dengan kita? Apa bahayanya bagi wawasan kebangsaan?", keywords: ["personalisasi", "minat sama", "mengisolasi", "polarisasi", "sudut pandang sempit", "echo chamber"], minKeywords: 2, maxScore: 10 },
+             { id: 40, category: 'essay', type: 'essay', question: "Identifikasi: Sebutkan 3 ciri fisik/visual dari sebuah situs web Phishing yang menyamar sebagai situs login resmi (misal: bank atau game)!", keywords: ["typo domain", "tidak https", "tampilan mirip tapi cacat", "mendesak", "meminta data sensitif", "popup berlebih"], minKeywords: 3, maxScore: 10 },
         ];
 
         // --- UTILS ---
@@ -269,12 +282,12 @@
                          </div>
                          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
                             <span className="text-xs font-bold text-slate-400 uppercase">Sistem</span>
-                            <p className="text-xl font-bold text-slate-800">Acak (Random)</p>
+                            <p className="text-xl font-bold text-slate-800">Acak Terstruktur</p>
                          </div>
                     </div>
 
                     <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-yellow-800 text-sm text-left mb-6">
-                        <strong>Perhatian:</strong> Soal akan diacak dari bank soal utama. Kerjakan sendiri dengan jujur. Waktu akan berjalan mundur otomatis.
+                        <strong>Perhatian:</strong> Soal akan diacak dari bank soal dengan komposisi: PG (Awal), Menjodohkan (Tengah), Uraian (Akhir).
                     </div>
 
                     <button onClick={onStart} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full md:w-auto">
@@ -285,10 +298,35 @@
         }
 
         function ExamInterface({ questions, answers, setAnswers, onSubmit, timeLeft, isSubmitting }) {
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [dragOver, setDragOver] = useState(false);
+
             const formatTime = (s) => {
                 const m = Math.floor(s / 60);
                 const sc = s % 60;
                 return `${m}:${sc < 10 ? '0' : ''}${sc}`;
+            };
+
+            const handleDragStart = (e, index) => {
+                e.dataTransfer.setData("text/plain", index);
+            };
+
+            const handleDragOver = (e) => {
+                e.preventDefault();
+                setDragOver(true);
+            };
+
+            const handleDragLeave = () => {
+                setDragOver(false);
+            };
+
+            const handleDrop = (e) => {
+                e.preventDefault();
+                setDragOver(false);
+                const draggedIndex = parseInt(e.dataTransfer.getData("text/plain"));
+                if (!isNaN(draggedIndex)) {
+                    setAnswers({...answers, [questions[currentIndex].id]: draggedIndex});
+                }
             };
 
             if (isSubmitting) {
@@ -301,53 +339,139 @@
                 );
             }
 
+            const currentQ = questions[currentIndex];
+            const isLastQuestion = currentIndex === questions.length - 1;
+            const isFirstQuestion = currentIndex === 0;
+
+            const handleNext = () => {
+                if (!isLastQuestion) setCurrentIndex(prev => prev + 1);
+            };
+
+            const handlePrev = () => {
+                if (!isFirstQuestion) setCurrentIndex(prev => prev - 1);
+            };
+
             return (
                 <div className="flex flex-col md:flex-row gap-6 items-start max-w-6xl mx-auto p-4">
                     {/* Main Question Area */}
-                    <div className="flex-1 w-full space-y-8 pb-20">
-                        {questions.map((q, idx) => (
-                            <div key={q.id} id={`q-${idx}`} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 scroll-mt-24">
-                                <div className="flex gap-4 mb-4">
-                                    <span className="flex-shrink-0 w-8 h-8 bg-indigo-100 text-indigo-700 font-bold rounded flex items-center justify-center text-sm">{idx + 1}</span>
-                                    <div className="flex-1">
-                                        <p className="font-medium text-lg text-slate-800">{q.question}</p>
-                                        {q.type === 'essay' && <span className="inline-block mt-1 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">Soal Uraian</span>}
+                    <div className="flex-1 w-full space-y-6 pb-10">
+                        {/* Single Question Card */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 min-h-[400px] flex flex-col">
+                            <div className="flex gap-4 mb-4">
+                                <span className="flex-shrink-0 w-10 h-10 bg-indigo-100 text-indigo-700 font-bold rounded-lg flex items-center justify-center text-lg">{currentIndex + 1}</span>
+                                <div className="flex-1">
+                                    <p className="font-medium text-lg text-slate-800 leading-relaxed">{currentQ.question}</p>
+                                    <div className="flex gap-2 mt-2">
+                                        {currentQ.category === 'essay' && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded font-medium">Uraian</span>}
+                                        {currentQ.category === 'match' && <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded font-medium">Menjodohkan (Geser)</span>}
+                                        {currentQ.category === 'bs' && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-medium">Benar/Salah</span>}
+                                        {currentQ.category === 'mc' && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">Pilihan Ganda</span>}
                                     </div>
                                 </div>
+                            </div>
 
-                                {q.type === 'choice' ? (
-                                    <div className="space-y-2 pl-12">
-                                        {q.options.map((opt, oIdx) => (
+                            <div className="flex-1 pl-0 md:pl-14">
+                                {currentQ.category === 'match' ? (
+                                    <div className="space-y-6">
+                                        {/* Drop Zone */}
+                                        <div 
+                                            onDragOver={handleDragOver}
+                                            onDragLeave={handleDragLeave}
+                                            onDrop={handleDrop}
+                                            className={`p-6 border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center transition-all duration-200 min-h-[120px] drop-zone ${dragOver ? 'active' : 'border-slate-300 bg-slate-50'}`}
+                                        >
+                                            {answers[currentQ.id] !== undefined ? (
+                                                <div className="bg-indigo-600 text-white p-4 rounded-lg shadow-md w-full max-w-md font-bold flex items-center justify-between">
+                                                    <span>{currentQ.options[answers[currentQ.id]]}</span>
+                                                    <button onClick={(e) => { e.stopPropagation(); setAnswers({...answers, [currentQ.id]: undefined}); }} className="ml-2 hover:bg-indigo-700 rounded p-1"><Icon path={Icons.X} className="w-4 h-4 text-white"/></button>
+                                                </div>
+                                            ) : (
+                                                <div className="text-slate-400 pointer-events-none">
+                                                    <Icon path={Icons.Move} className="w-8 h-8 mx-auto mb-2 opacity-50"/>
+                                                    <p className="font-medium text-sm">Geser balok jawaban yang benar ke kotak ini</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Draggable Options */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {currentQ.options.map((opt, oIdx) => (
+                                                <div 
+                                                    key={oIdx}
+                                                    draggable={true}
+                                                    onDragStart={(e) => handleDragStart(e, oIdx)}
+                                                    onClick={() => setAnswers({...answers, [currentQ.id]: oIdx})} // Keep click for mobile fallback
+                                                    className={`p-4 rounded-lg border bg-white shadow-sm hover:shadow-md transition-all draggable-source 
+                                                        ${answers[currentQ.id] === oIdx ? 'opacity-50 ring-2 ring-indigo-200' : 'border-slate-200'}
+                                                    `}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="bg-slate-100 p-2 rounded text-slate-500"><Icon path={Icons.Move} className="w-4 h-4"/></div>
+                                                        <span className="font-medium text-slate-700">{opt}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : currentQ.type === 'choice' ? (
+                                    <div className="space-y-3">
+                                        {currentQ.options.map((opt, oIdx) => (
                                             <button 
                                                 key={oIdx}
-                                                onClick={() => setAnswers({...answers, [q.id]: oIdx})}
-                                                className={`w-full text-left p-3 rounded-lg border transition flex items-center gap-3 ${answers[q.id] === oIdx ? 'bg-indigo-50 border-indigo-500 text-indigo-800 font-medium' : 'hover:bg-slate-50 border-slate-200 text-slate-600'}`}
+                                                onClick={() => setAnswers({...answers, [currentQ.id]: oIdx})}
+                                                className={`w-full text-left p-4 rounded-lg border transition flex items-center gap-3 ${answers[currentQ.id] === oIdx ? 'bg-indigo-50 border-indigo-500 text-indigo-800 font-medium ring-1 ring-indigo-500' : 'hover:bg-slate-50 border-slate-200 text-slate-600'}`}
                                             >
-                                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${answers[q.id] === oIdx ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'}`}>
-                                                    {answers[q.id] === oIdx && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 ${answers[currentQ.id] === oIdx ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'}`}>
+                                                    {answers[currentQ.id] === oIdx && <div className="w-2 h-2 bg-white rounded-full"></div>}
                                                 </div>
                                                 {opt}
                                             </button>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="pl-12">
-                                        <textarea 
-                                            value={answers[q.id] || ''}
-                                            onChange={e => setAnswers({...answers, [q.id]: e.target.value})}
-                                            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                                            rows="4"
-                                            placeholder="Ketik jawaban uraian Anda di sini..."
-                                        ></textarea>
-                                    </div>
+                                    <textarea 
+                                        value={answers[currentQ.id] || ''}
+                                        onChange={e => setAnswers({...answers, [currentQ.id]: e.target.value})}
+                                        className="w-full p-4 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-48 resize-none text-slate-700"
+                                        placeholder="Ketik jawaban uraian Anda di sini..."
+                                    ></textarea>
                                 )}
                             </div>
-                        ))}
+
+                            {/* Navigation Buttons */}
+                            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
+                                <button 
+                                    onClick={handlePrev}
+                                    disabled={isFirstQuestion}
+                                    className={`px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 transition ${isFirstQuestion ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                    Sebelumnya
+                                </button>
+
+                                {isLastQuestion ? (
+                                    <button 
+                                        onClick={() => { if(confirm("Yakin ingin mengakhiri ulangan? Pastikan semua jawaban sudah terisi.")) onSubmit(); }}
+                                        className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold shadow-md transition flex items-center gap-2"
+                                    >
+                                        <Icon path={Icons.CheckCircle} className="w-5 h-5"/> Akhiri Ulangan
+                                    </button>
+                                ) : (
+                                    <button 
+                                        onClick={handleNext}
+                                        className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition flex items-center gap-2"
+                                    >
+                                        Selanjutnya
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Sidebar */}
-                    <div className="w-full md:w-72 flex-shrink-0 space-y-4 sticky top-4">
-                        <div className="bg-white p-4 rounded-xl shadow border border-slate-200 text-center">
+                    <div className="w-full md:w-80 flex-shrink-0 space-y-4 sticky top-4">
+                        <div className="bg-white p-5 rounded-xl shadow border border-slate-200 text-center">
                             <span className="text-xs font-bold text-slate-400 uppercase flex items-center justify-center gap-1 mb-1">
                                 <Icon path={Icons.Clock} className="w-3 h-3"/> Sisa Waktu
                             </span>
@@ -356,27 +480,35 @@
                             </div>
                         </div>
 
-                        <div className="bg-white p-4 rounded-xl shadow border border-slate-200">
-                            <h4 className="font-bold text-sm text-slate-700 mb-3">Navigasi Soal</h4>
-                            <div className="grid grid-cols-5 gap-2">
-                                {questions.map((q, idx) => (
-                                    <a 
+                        <div className="bg-white p-5 rounded-xl shadow border border-slate-200">
+                            <h4 className="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2">
+                                <Icon path={Icons.FileText} className="w-4 h-4"/> Navigasi Soal
+                            </h4>
+                            <div className="grid grid-cols-5 gap-2 max-h-[350px] overflow-y-auto pr-1">
+                                {questions.map((q, idx) => {
+                                    const isAnswered = answers[q.id] !== undefined && answers[q.id] !== "";
+                                    const isActive = idx === currentIndex;
+                                    
+                                    return (
+                                    <button 
                                         key={q.id}
-                                        href={`#q-${idx}`}
-                                        className={`aspect-square flex items-center justify-center rounded text-sm font-bold transition ${answers[q.id] !== undefined ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
+                                        onClick={() => setCurrentIndex(idx)}
+                                        className={`aspect-square flex items-center justify-center rounded-lg text-sm font-bold transition border-2 
+                                            ${isActive ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-transparent'}
+                                            ${!isActive && isAnswered ? 'bg-indigo-600 text-white' : ''}
+                                            ${!isActive && !isAnswered ? 'bg-slate-100 text-slate-500 hover:bg-slate-200' : ''}
+                                        `}
                                     >
                                         {idx + 1}
-                                    </a>
-                                ))}
+                                    </button>
+                                )})}
+                            </div>
+                            <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500 justify-center">
+                                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-indigo-600 rounded"></div> Dijawab</div>
+                                <div className="flex items-center gap-1"><div className="w-3 h-3 border-2 border-indigo-600 bg-indigo-50 rounded"></div> Aktif</div>
+                                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-slate-100 rounded"></div> Kosong</div>
                             </div>
                         </div>
-                        
-                        <button 
-                            onClick={() => { if(confirm("Yakin ingin mengumpulkan ujian?")) onSubmit(); }}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold shadow-lg transition"
-                        >
-                            Kumpulkan Jawaban
-                        </button>
                     </div>
                 </div>
             );
@@ -630,9 +762,36 @@
             };
 
             const startExam = () => {
-                const shuffled = shuffleArray(INITIAL_QUESTIONS);
-                const selected = shuffled.slice(0, 25); 
-                setQuestions(selected);
+                // 1. Group by Category
+                const mcPool = INITIAL_QUESTIONS.filter(q => q.category === 'mc');
+                const bsPool = INITIAL_QUESTIONS.filter(q => q.category === 'bs');
+                const matchPool = INITIAL_QUESTIONS.filter(q => q.category === 'match');
+                const essayPool = INITIAL_QUESTIONS.filter(q => q.category === 'essay');
+
+                // 2. Shuffle Each Pool Independently
+                const shuffledMC = shuffleArray(mcPool);
+                const shuffledBS = shuffleArray(bsPool);
+                const shuffledMatch = shuffleArray(matchPool);
+                const shuffledEssay = shuffleArray(essayPool);
+
+                // 3. Select Questions (Total 25)
+                // - Bagian 1: MC (8 Soal)
+                // - Bagian 2: BS (2 Soal) + Match (8 Soal)
+                // - Bagian 3: Essay (7 Soal)
+                const selectedMC = shuffledMC.slice(0, 8);
+                const selectedBS = shuffledBS.slice(0, 2);
+                const selectedMatch = shuffledMatch.slice(0, 8);
+                const selectedEssay = shuffledEssay.slice(0, 7);
+
+                // 4. Combine in Strict Order: MC -> BS -> Match -> Essay
+                const examQuestions = [
+                    ...selectedMC,
+                    ...selectedBS,
+                    ...selectedMatch,
+                    ...selectedEssay
+                ];
+
+                setQuestions(examQuestions);
                 setTimeLeft(40 * 60);
                 setView('exam');
             };
