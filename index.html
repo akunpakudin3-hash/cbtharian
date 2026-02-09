@@ -2,259 +2,184 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CBT Informatika - Jejak Digital</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CBT Informatika - Standar Ujian</title>
     
-    <!-- 1. TAILWIND CSS -->
+    <!-- 1. LIBRARY -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. REACT & REACT DOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- 3. BABEL (Untuk JSX) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- 4. SUPABASE JS (Versi UMD yang stabil) -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
-    <!-- 5. SHEETJS (Untuk Export Excel) -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     
-    <!-- 6. FONT (Inter) -->
+    <!-- 2. FONT (Inter - Standar & Jelas) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- 3. CONFIG STYLE -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        cbtBlue: '#2563eb', // Indigo 600 equivalent
+                        cbtDark: '#1e293b', // Slate 800
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
+        body { background-color: #e2e8f0; font-size: 14px; }
+        /* Scrollbar Tipis */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .scroll-smooth { scroll-behavior: smooth; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         
-        /* Drag & Drop Styles */
-        .draggable-source { cursor: grab; }
-        .draggable-source:active { cursor: grabbing; }
-        .drop-zone { transition: all 0.2s ease; }
-        .drop-zone.active { border-color: #4f46e5; background-color: #eef2ff; transform: scale(1.02); }
+        .question-text { font-size: 16px; line-height: 1.6; }
+        .option-text { font-size: 14px; }
+        
+        /* Grid Navigasi */
+        .nav-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+        
+        /* Animasi */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .fade-in { animation: fadeIn 0.2s ease-out; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
 
-    <div id="root"></div>
+    <div id="root" class="h-full flex flex-col"></div>
 
     <script type="text/babel">
-        // ==========================================
-        // KONFIGURASI SUPABASE (WAJIB DIISI)
-        // ==========================================
-        const SUPABASE_URL = "https://qikeneczlyvbjprnhxyl.supabase.co"; // URL Project
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpa2VuZWN6bHl2Ympwcm5oeHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MDM1MTYsImV4cCI6MjA4NjE3OTUxNn0.qRdHiFNMOnxYDOLz9Q-CsistIrYn0GT7HXX4FNkD1d4"; // Anon Key
+        // --- KONFIGURASI DATABASE ---
+        const SUPABASE_URL = "https://qikeneczlyvbjprnhxyl.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpa2VuZWN6bHl2Ympwcm5oeHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2MDM1MTYsImV4cCI6MjA4NjE3OTUxNn0.qRdHiFNMOnxYDOLz9Q-CsistIrYn0GT7HXX4FNkD1d4"; 
         
-        // Inisialisasi Client Supabase
         let supabaseClient = null;
         try {
-            if (typeof supabase !== 'undefined') {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            } else {
-                console.error("Library Supabase gagal dimuat.");
-            }
-        } catch (error) {
-            console.error("Error inisialisasi Supabase:", error);
-        }
+            if (typeof supabase !== 'undefined') supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) { console.error("Supabase Error:", e); }
 
         const { useState, useEffect } = React;
 
-        // --- ICON COMPONENTS ---
-        const Icon = ({ path, className, fill="none" }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                {path}
-            </svg>
+        // --- ICON (SVG Simple) ---
+        const Icon = ({ path, className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{path}</svg>
         );
 
         const Icons = {
-            Brain: <><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6 6.5"/><path d="M3.477 12.578c.25.3.56.548.9.721"/><path d="M20.52 12.578c-.25.3-.56.548-.9.721"/></>,
             User: <><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
             Lock: <><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
             Clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
-            FileText: <><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></>,
-            CheckCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
-            XCircle: <><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></>,
+            Check: <polyline points="20 6 9 17 4 12"/>,
+            X: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
+            Menu: <><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></>,
+            Left: <polyline points="15 18 9 12 15 6"/>,
+            Right: <polyline points="9 18 15 12 9 6"/>,
+            List: <><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></>,
             LogOut: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></>,
-            GraduationCap: <><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></>,
-            Hash: <><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></>,
-            Save: <><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>,
             Download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></>,
-            Loader: <path d="M21 12a9 9 0 1 1-6.219-8.56"/>,
-            Eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
-            X: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
-            Move: <><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="19 9 22 12 19 15"/><polyline points="9 19 12 22 15 19"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/></>
+            Loader: <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
         };
 
-        // --- BANK SOAL (40 Soal HOTS) ---
+        // --- DATA SOAL ---
         const INITIAL_QUESTIONS = [
-             { id: 1, category: 'mc', type: 'choice', question: "(Analisis Kasus) Seorang pelamar kerja ditolak oleh perusahaan multinasional meskipun memiliki IPK 4.0. Pihak HRD menemukan komentar provokatif di akun media sosial anonim pelamar tersebut dari 5 tahun lalu. Kesimpulan paling logis dari kasus ini adalah...", options: ["Perusahaan melanggar hak privasi karena menelusuri akun anonim.", "Jejak digital bersifat abadi (persisten) dan anonimitas di internet hanyalah ilusi semu.", "Pelamar seharusnya menghapus akun tersebut tepat sehari sebelum wawancara.", "Media sosial tidak mencerminkan kepribadian asli seseorang, hanya hiburan."], correctAnswer: 1 },
-             { id: 2, category: 'mc', type: 'choice', question: "(Evaluasi Keamanan) Budi memposting foto Boarding Pass tiket pesawatnya di Instagram Story dengan menutupi nama penumpangnya menggunakan stiker. Mengapa tindakan Budi dinilai MASIH BERISIKO tinggi?", options: ["Karena teman-temannya bisa merasa iri dan melakukan cyberbullying.", "Karena kode Barcode/QR pada tiket masih dapat dipindai untuk mengungkapkan data sensitif (NIK, PNR).", "Karena maskapai penerbangan akan membatalkan tiket secara otomatis jika terdeteksi online.", "Karena kualitas foto akan menurun (pecah) saat diunggah."], correctAnswer: 1 },
-             { id: 3, category: 'mc', type: 'choice', question: "(Logika Teknis) Seorang siswa menggunakan 'Incognito Mode' di laboratorium komputer sekolah untuk mengakses situs game yang diblokir. Namun, admin sekolah tetap mengetahui aktivitas tersebut. Mengapa hal ini bisa terjadi?", options: ["Karena siswa lupa menghapus riwayat penelusuran (History).", "Karena Incognito hanya mencegah penyimpanan data di perangkat lokal, bukan mengenkripsi lalu lintas data di jaringan ISP/Router.", "Karena admin sekolah memasang kamera CCTV di belakang layar.", "Karena Incognito Mode sedang mengalami gangguan server global."], correctAnswer: 1 },
-             { id: 4, category: 'mc', type: 'choice', question: "(Analisis Dampak) Fenomena 'Sharenting' (Orang tua membagikan foto anak secara berlebihan) sering dianggap sepele. Namun, risiko jangka panjang terbesar bagi 'Identitas Digital' anak di masa depan adalah...", options: ["Anak menjadi terlalu terkenal dan sulit bergaul.", "Anak kehilangan hak atas privasinya sendiri dan berisiko mengalami penyalahgunaan data biometrik.", "Memori penyimpanan awan (Cloud Storage) orang tua menjadi penuh.", "Anak akan tumbuh menjadi pribadi yang narsis."], correctAnswer: 1 },
-             { id: 5, category: 'mc', type: 'choice', question: "(Perbandingan Konsep) Perhatikan dua aktivitas berikut: (A) Mengirim email lamaran pekerjaan. (B) Aplikasi peta merekam rute perjalanan harianmu di latar belakang. Analisis yang tepat mengenai klasifikasi jejak digital keduanya adalah...", options: ["(A) adalah Jejak Pasif, sedangkan (B) adalah Jejak Aktif.", "(A) adalah Jejak Aktif (Sadar), sedangkan (B) adalah Jejak Pasif (Tanpa Sadar).", "Keduanya merupakan Jejak Digital Pasif.", "Keduanya merupakan Jejak Digital Aktif."], correctAnswer: 1 },
-             { id: 6, category: 'mc', type: 'choice', question: "(Literasi Digital) Kamu menerima pesan WhatsApp: 'Kuota Belajar Gratis Kemdikbud! Klik: http://kuota-kemdikbud-gratis.xyz'. Langkah nalar kritis pertama yang harus dilakukan sebelum bertindak adalah...", options: ["Segera klik tautan tersebut sebelum masa berlaku habis.", "Meneruskan (Forward) ke grup kelas agar teman-teman juga mendapatkannya.", "Menganalisis domain URL. Karena menggunakan '.xyz' dan bukan '.go.id', maka indikasi kuat Phishing.", "Mengisi data nama dan nomor HP untuk membuktikan kebenarannya."], correctAnswer: 2 },
-             { id: 7, category: 'mc', type: 'choice', question: "(Konsep Data) Mengapa tindakan menghapus (delete) postingan di media sosial tidak menjamin jejak digital tersebut hilang 100% dari internet?", options: ["Karena tombol hapus di aplikasi seringkali mengalami kerusakan teknis.", "Karena konten mungkin sudah di-screenshot orang lain atau tersimpan di server backup penyedia layanan (Mirroring).", "Karena internet memiliki kapasitas penyimpanan tak terbatas.", "Karena pemerintah melarang penghapusan data digital."], correctAnswer: 1 },
-             { id: 8, category: 'mc', type: 'choice', question: "(Hukum & Etika) Jika terjadi kasus cyberbullying menggunakan akun palsu (fake account), siapakah subjek hukum yang paling bertanggung jawab menurut UU ITE?", options: ["Penyedia platform media sosial (seperti Instagram/Twitter).", "Pihak sekolah karena kurang pengawasan.", "Pemilik asli akun tersebut, karena jejak digital (IP Address/Device ID) dapat dilacak secara forensik.", "Korban, karena terlalu sensitif menanggapi komentar."], correctAnswer: 2 },
-             { id: 9, category: 'mc', type: 'choice', question: "(Strategi) Langkah paling logis dan efektif untuk melakukan 'Manajemen Reputasi Online' sebelum memasuki dunia kerja adalah...", options: ["Menghapus permanen seluruh akun media sosial agar tidak bisa dilacak.", "Melakukan 'Self-Googling' untuk audit, menghapus konten negatif, dan memperbanyak konten karya positif.", "Mengganti nama asli dengan nama samaran di semua dokumen resmi.", "Membuat ratusan status positif dalam satu malam."], correctAnswer: 1 },
-             { id: 10, category: 'mc', type: 'choice', question: "(Sistem Komputer) Ketika kamu mencari 'Sepatu Lari' di Google, tiba-tiba iklan sepatu muncul di Instagram dan Facebook-mu. Teknologi apa yang bekerja di latar belakang untuk menghubungkan data ini?", options: ["Virus Trojan yang mencuri data.", "Cookies pihak ketiga (Third-party Cookies) dan Algoritma Pelacakan Lintas Situs.", "Kamera HP yang merekam bola mata pengguna.", "Admin media sosial memantau aktivitasmu secara manual."], correctAnswer: 1 },
-             { id: 11, category: 'mc', type: 'choice', question: "(Keamanan Jaringan) Mengapa melakukan transaksi Mobile Banking menggunakan Wi-Fi publik gratis (tanpa VPN) sangat tidak disarankan?", options: ["Karena koneksi Wi-Fi publik biasanya lambat.", "Karena jaringan publik rentan terhadap serangan 'Man-in-the-Middle' (Penyadapan/Sniffing) data yang tidak terenkripsi.", "Karena akan dikenakan biaya tambahan oleh pemilik Wi-Fi.", "Karena baterai HP akan lebih cepat habis."], correctAnswer: 1 },
-             { id: 12, category: 'mc', type: 'choice', question: "(Etika Digital) Memposting foto teman yang sedang tidur dengan mulut terbuka sebagai bahan lelucon (meme) tanpa izin, secara etika melanggar prinsip...", options: ["Hak Cipta (Copyright).", "Consent (Persetujuan) dan Penghormatan Privasi.", "Kebebasan Berpendapat.", "Kreativitas Digital."], correctAnswer: 1 },
-             { id: 13, category: 'bs', type: 'choice', question: "(B/S) Mengaktifkan 'Mode Pesawat' (Airplane Mode) saat mengambil foto menjamin foto tersebut tidak akan memiliki metadata lokasi (Geotagging) sama sekali.", options: ["Benar", "Salah (Jika GPS aktif sebelumnya, koordinat terakhir bisa tersimpan)"], correctAnswer: 1 },
-             { id: 14, category: 'bs', type: 'choice', question: "(B/S) Jejak digital pasif (seperti riwayat pencarian dan lokasi GPS) seringkali lebih berbahaya daripada jejak aktif karena tercipta tanpa kesadaran penuh pengguna.", options: ["Benar", "Salah"], correctAnswer: 0 },
-             { id: 15, category: 'match', type: 'choice', question: "Pasangkan konsep 'Phishing' dengan analogi dunia nyata yang paling tepat:", options: ["Pencuri yang membobol rumah paksa", "Penipu yang menyamar jadi petugas bank untuk minta PIN", "Penguntit yang mengikuti diam-diam", "Tukang pos yang salah alamat"], correctAnswer: 1 },
-             { id: 16, category: 'match', type: 'choice', question: "Pasangkan jenis jejak digital dengan contoh konkretnya:", options: ["Jejak Pasif - Komentar di YouTube", "Jejak Aktif - Log Server ISP", "Jejak Pasif - Alamat IP & Metadata Foto", "Jejak Aktif - Iklan yang muncul otomatis"], correctAnswer: 2 },
-             { id: 17, category: 'match', type: 'choice', question: "Manakah pasangan sebab-akibat keamanan siber yang logis?", options: ["Password 123456 - Akun sulit diretas", "Mengaktifkan 2FA - Lapisan keamanan ganda", "Klik Link Sembarang - Smartphone jadi cepat", "Update OS - HP jadi lambat"], correctAnswer: 1 },
-             { id: 18, category: 'match', type: 'choice', question: "Jodohkan istilah 'Doxing' dengan definisi operasionalnya:", options: ["Menebak password akun", "Menyebarkan data pribadi (alamat/No HP) untuk intimidasi", "Mengambil alih akun game", "Menjual barang palsu"], correctAnswer: 1 },
-             { id: 19, category: 'match', type: 'choice', question: "Pasangkan indikator keamanan URL dengan maknanya:", options: ["HTTPS (Gembok) - Komunikasi data terenkripsi", "HTTP - Sangat Aman untuk Transaksi", "Domain .xyz - Situs Pemerintah Resmi", "Warna Merah - Website Terpercaya"], correctAnswer: 0 },
-             { id: 20, category: 'match', type: 'choice', question: "Jodohkan teknik 'Social Engineering' dengan metodenya:", options: ["Menggunakan software canggih", "Memanipulasi psikologis manusia (rasa takut/penasaran)", "Memutus kabel internet", "Mencuri sinyal satelit"], correctAnswer: 1 },
-             { id: 21, category: 'match', type: 'choice', question: "Pasangkan pelanggaran etika dengan istilahnya:", options: ["Mengutip tanpa sumber - Fair Use", "Mengambil karya orang & aku-aku - Plagiarisme", "Menulis email - Spamming", "Sopan santun - Cyberbullying"], correctAnswer: 1 },
-             { id: 22, category: 'match', type: 'choice', question: "Manakah pasangan praktik keamanan password yang BURUK?", options: ["Password - Tanggal Lahir Lengkap", "Password - Kalimat Panjang (Passphrase)", "Password - Kombinasi Simbol", "Password - Berbeda tiap akun"], correctAnswer: 0 },
-             { id: 23, category: 'match', type: 'choice', question: "Jodohkan istilah 'Digital Footprint' dengan metafora ekonominya:", options: ["Mata Uang Baru (Reputasi bernilai ekonomi)", "Sampah Daur Ulang", "Jejak di Pantai (Mudah hilang)", "Uang Kripto"], correctAnswer: 0 },
-             { id: 24, category: 'match', type: 'choice', question: "Pasangkan fitur privasi medsos dengan fungsinya:", options: ["Block - Melaporkan konten ilegal", "Mute - Menyembunyikan postingan tanpa memutus pertemanan", "Report - Menutup jalur komunikasi", "Unfollow - Menghapus akun"], correctAnswer: 1 },
-             { id: 25, category: 'match', type: 'choice', question: "Jodohkan ekstensi file dengan potensi risikonya:", options: [".txt - Risiko Tinggi Virus", ".jpg - Risiko Sedang", ".exe / .apk - Risiko Tinggi (Executable)", ".mp3 - Risiko Sangat Tinggi"], correctAnswer: 2 },
-             { id: 26, category: 'match', type: 'choice', question: "Pasangkan UU ITE dengan jenis pelanggaran utamanya:", options: ["Pasal 27 - Pencemaran Nama Baik / Kesusilaan", "Pasal 27 - Pencurian Hardware", "Pasal 28 - Pelanggaran Lampu Merah", "Pasal 29 - Korupsi"], correctAnswer: 0 },
-             { id: 27, category: 'match', type: 'choice', question: "Jodohkan istilah 'Digital Detox' dengan tujuannya:", options: ["Menambah Followers", "Mengurangi kecanduan & menjaga kesehatan mental", "Meningkatkan penjualan online", "Mempercepat koneksi internet"], correctAnswer: 1 },
-             { id: 28, category: 'essay', type: 'essay', question: "Studi Kasus: Seorang lulusan terbaik gagal diterima kerja karena tim HRD menemukan jejak digitalnya sering berkata kasar di kolom komentar game online 7 tahun lalu. Analisislah mengapa perusahaan modern menganggap 'Jejak Digital' sama pentingnya dengan 'Ijazah Akademik'!", keywords: ["karakter", "reputasi", "integritas", "budaya kerja", "risiko", "citra perusahaan"], minKeywords: 3, maxScore: 10 },
-             { id: 29, category: 'essay', type: 'essay', question: "Analisis Kritis: Fitur GPS pada aplikasi Ojek Online memberikan kenyamanan (akurasi penjemputan) tetapi juga ancaman privasi (pelacakan pola hidup). Jelaskan bagaimana kamu menyeimbangkan 'Kenyamanan vs Privasi' dalam kasus ini!", keywords: ["izin akses", "hanya saat digunakan", "matikan gps", "privasi", "data lokasi", "kesadaran"], minKeywords: 3, maxScore: 10 },
-             { id: 30, category: 'essay', type: 'essay', question: "Problem Solving: Temanmu panik karena ada akun palsu (impersonation) yang menggunakan foto dan namanya untuk menipu orang lain meminjam uang. Rumuskan 3 langkah darurat yang harus segera dilakukan temanmu!", keywords: ["lapor", "report akun", "klarifikasi publik", "bukti screenshot", "blokir", "bantuan teman"], minKeywords: 3, maxScore: 10 },
-             { id: 31, category: 'essay', type: 'essay', question: "Evaluasi: Banyak orang merasa aman karena 'tidak punya rahasia'. Bantahlah argumen tersebut dengan menjelaskan bahaya 'Profiling Data' dari jejak digital pasif (seperti riwayat belanja dan lokasi)!", keywords: ["manipulasi", "target iklan", "pencurian identitas", "rekayasa sosial", "prediksi perilaku", "data agregat"], minKeywords: 3, maxScore: 10 },
-             { id: 32, category: 'essay', type: 'essay', question: "Kreasi: Buatlah sebuah kalimat slogan kampanye tentang 'Etika Berinternet' yang menargetkan remaja, lalu jelaskan pesan filosofis di balik slogan buatanmu!", keywords: ["pikir", "jari", "masa depan", "jejak", "positif", "bijak", "saring"], minKeywords: 2, maxScore: 10 },
-             { id: 33, category: 'essay', type: 'essay', question: "Analisis Keamanan: Mengapa menggunakan Tanggal Lahir sebagai PIN atau Password dianggap sebagai 'Dosa Besar' dalam keamanan siber? Jelaskan kaitannya dengan teknik 'Social Engineering'!", keywords: ["data publik", "mudah ditebak", "rekayasa sosial", "profiling", "lemah", "brute force"], minKeywords: 3, maxScore: 10 },
-             { id: 34, category: 'essay', type: 'essay', question: "Hukum: Jelaskan bagaimana sebuah komentar pendek di media sosial (\"hate speech\") dapat berujung pada penjara menurut UU ITE di Indonesia? Apa unsur yang dilanggar?", keywords: ["pencemaran nama baik", "ujaran kebencian", "sara", "pasal 27", "pasal 28", "pidana", "digital"], minKeywords: 3, maxScore: 10 },
-             { id: 35, category: 'essay', type: 'essay', question: "Komparasi: Jelaskan perbedaan fungsi strategis antara fitur 'Block' dan 'Report'! Dalam situasi apa kamu harus memilih Report daripada sekadar Block?", keywords: ["block memutus", "report melapor", "pelanggaran komunitas", "tindakan admin", "berbahaya", "ilegal"], minKeywords: 3, maxScore: 10 },
-             { id: 36, category: 'essay', type: 'essay', question: "Studi Kasus: Kamu menerima email dari pengirim tak dikenal dengan subjek 'HADIAH MENANG' dan lampiran file berekstensi '.exe'. Analisis risiko apa yang terjadi jika kamu mengunduh file tersebut!", keywords: ["malware", "virus", "ransomware", "executable", "pencurian data", "merusak sistem"], minKeywords: 3, maxScore: 10 },
-             { id: 37, category: 'essay', type: 'essay', question: "Opini Kritis: Sekolah berencana menyita HP siswa untuk memeriksa chat pribadi demi mencegah bullying. Setujukah kamu? Berikan argumen berdasarkan hak privasi vs keamanan sekolah!", keywords: ["privasi siswa", "batas wewenang", "hak asasi", "prosedur", "consent", "alternatif edukasi"], minKeywords: 2, maxScore: 10 },
-             { id: 38, category: 'essay', type: 'essay', question: "Konsep Baru: Apa yang dimaksud dengan 'Digital Legacy' (Warisan Digital)? Mengapa penting bagi kita untuk mengatur siapa yang boleh mengakses akun kita setelah kita meninggal?", keywords: ["data pasca mati", "penyalahgunaan", "kenangan", "akses ahli waris", "memorialization", "keamanan"], minKeywords: 2, maxScore: 10 },
-             { id: 39, category: 'essay', type: 'essay', question: "Analisis Sistem: Bagaimana 'Algoritma Media Sosial' menciptakan 'Filter Bubble' yang membuat kita merasa semua orang sepemikiran dengan kita? Apa bahayanya bagi wawasan kebangsaan?", keywords: ["personalisasi", "minat sama", "mengisolasi", "polarisasi", "sudut pandang sempit", "echo chamber"], minKeywords: 2, maxScore: 10 },
-             { id: 40, category: 'essay', type: 'essay', question: "Identifikasi: Sebutkan 3 ciri fisik/visual dari sebuah situs web Phishing yang menyamar sebagai situs login resmi (misal: bank atau game)!", keywords: ["typo domain", "tidak https", "tampilan mirip tapi cacat", "mendesak", "meminta data sensitif", "popup berlebih"], minKeywords: 3, maxScore: 10 },
+            { id: 1, category: 'mc', type: 'choice', question: "Seorang pelamar kerja ditolak karena komentar kasar di akun anonim lamanya. Kesimpulan?", options: ["Panitia melanggar privasi.", "Jejak digital bersifat abadi.", "Rina harusnya hapus akun.", "Medsos bukan karakter asli."], correctAnswer: 1 },
+            { id: 2, category: 'mc', type: 'choice', question: "Mengapa posting foto Boarding Pass berbahaya?", options: ["Bikin teman iri.", "Barcode mengandung data pribadi.", "Tiket batal otomatis.", "Foto pecah."], correctAnswer: 1 },
+            { id: 3, category: 'mc', type: 'choice', question: "Fakta tentang Incognito Mode?", options: ["Sembunyi dari ISP.", "Lokasi GPS mati.", "Hanya tidak simpan history lokal.", "Anti virus."], correctAnswer: 2 },
+            { id: 4, category: 'mc', type: 'choice', question: "Risiko utama Sharenting (Share foto anak)?", options: ["Anak jadi artis.", "Hilang privasi & risiko data.", "Memori penuh.", "Anak sombong."], correctAnswer: 1 },
+            { id: 5, category: 'mc', type: 'choice', question: "Email lamaran (A) & History Maps (B). Jenis jejak?", options: ["A=Pasif, B=Aktif.", "A=Aktif, B=Pasif.", "Semua Pasif.", "Semua Aktif."], correctAnswer: 1 },
+            { id: 6, category: 'mc', type: 'choice', question: "Ada link kemdikbud-kuota.xyz. Sikapmu?", options: ["Klik.", "Share.", "Analisis domain (Phishing).", "Isi data."], correctAnswer: 2 },
+            { id: 7, category: 'mc', type: 'choice', question: "Kenapa hapus postingan tidak jamin hilang?", options: ["Tombol rusak.", "Ada screenshot/backup.", "Memori tak terbatas.", "Dilarang."], correctAnswer: 1 },
+            { id: 8, category: 'mc', type: 'choice', question: "Siapa bertanggung jawab hukum cyberbullying?", options: ["Medsos.", "Sekolah.", "Pemilik akun (pelaku).", "Korban."], correctAnswer: 2 },
+            { id: 13, category: 'bs', type: 'choice', question: "(B/S) Mode Pesawat menghapus jejak digital.", options: ["Benar", "Salah"], correctAnswer: 1 },
+            { id: 14, category: 'bs', type: 'choice', question: "(B/S) VPN mengenkripsi koneksi internet.", options: ["Benar", "Salah"], correctAnswer: 0 },
+            { id: 15, category: 'match', type: 'complex_match', question: "Pasangkan jenis Ancaman Siber:", pairs: [{ left: "Phishing", right: "Link Palsu" }, { left: "Doxing", right: "Sebar Data Pribadi" }, { left: "Sniffing", right: "Penyadapan Data" }, { left: "Defacing", right: "Peretasan Web" }] },
+            { id: 16, category: 'match', type: 'complex_match', question: "Jodohkan aktivitas jejak digital:", pairs: [{ left: "Jejak Aktif", right: "Posting IG" }, { left: "Jejak Pasif", right: "Log Server" }, { left: "Metadata", right: "Lokasi Foto" }, { left: "Cookies", right: "Simpan Login" }] },
+            { id: 17, category: 'match', type: 'complex_match', question: "Pasangkan fitur keamanan:", pairs: [{ left: "2FA", right: "Verifikasi 2 Langkah" }, { left: "Password Manager", right: "Sandi Rumit" }, { left: "Incognito", right: "Tanpa History" }, { left: "VPN", right: "Enkripsi Jalur" }] },
+            { id: 18, category: 'match', type: 'complex_match', question: "Jodohkan istilah Etika:", pairs: [{ left: "Cyberbullying", right: "Perundungan" }, { left: "Plagiarisme", right: "Curi Karya" }, { left: "Hate Speech", right: "Ujaran Kebencian" }, { left: "Hoaks", right: "Berita Bohong" }] },
+            { id: 19, category: 'match', type: 'complex_match', question: "Pasangkan Risiko File:", pairs: [{ left: ".exe", right: "Sangat Berisiko" }, { left: ".jpg", right: "Risiko Rendah" }, { left: ".pdf", right: "Risiko Sedang" }, { left: ".zip", right: "Perlu Scan" }] },
+            { id: 28, category: 'essay', type: 'essay', question: "Mengapa universitas cek jejak digital pelamar?", keywords: ["karakter", "reputasi", "integritas"], minKeywords: 2 },
+            { id: 29, category: 'essay', type: 'essay', question: "Jelaskan dilema Kenyamanan vs Privasi pada GPS Ojol!", keywords: ["mudah", "lacak", "privasi"], minKeywords: 2 },
+            { id: 30, category: 'essay', type: 'essay', question: "3 Langkah jika ada akun palsu pakai namamu?", keywords: ["lapor", "blokir", "klarifikasi"], minKeywords: 2 },
+            { id: 31, category: 'essay', type: 'essay', question: "Apakah jejak pasif lebih bahaya dari aktif? Jelaskan!", keywords: ["tanpa sadar", "profiling"], minKeywords: 2 },
+            { id: 32, category: 'essay', type: 'essay', question: "Buat slogan 'Think Before You Post' dan maknanya!", keywords: ["pikir", "masa depan"], minKeywords: 2 }
         ];
 
         // --- UTILS ---
-        const shuffleArray = (array) => {
-            const shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled;
-        };
-
-        const simulateAIAnalysis = async (answer, keywords, minKeywords) => {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    if (!answer || answer.trim().length < 5) {
-                        resolve({ score: 0, feedback: "Jawaban terlalu singkat." });
-                        return;
-                    }
-                    const lowerAnswer = answer.toLowerCase();
-                    const matchCount = keywords.filter(k => lowerAnswer.includes(k)).length;
-                    
-                    let score = 30; // Base score
-                    let feedback = "Kurang lengkap.";
-                    
-                    if (matchCount >= minKeywords) {
-                        score = 100;
-                        feedback = "Sangat Baik! Argumen lengkap.";
-                    } else if (matchCount >= Math.ceil(minKeywords / 2)) {
-                        score = 70;
-                        feedback = "Cukup baik, perlu lebih detail.";
-                    }
-                    
-                    resolve({ score, feedback });
-                }, 1000);
-            });
-        };
+        const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
+        const simulateAIAnalysis = async (ans, keys, min) => new Promise(r => setTimeout(() => {
+            if(!ans || ans.length < 5) return r({score: 0, feedback: "Terlalu singkat"});
+            const h = keys.filter(k => ans.toLowerCase().includes(k)).length;
+            r({score: h >= min ? 100 : h > 0 ? 50 : 20, feedback: "Dinilai AI"});
+        }, 800));
 
         // ==========================================
-        // COMPONENTS
+        // COMPONENTS (CBT STYLE)
         // ==========================================
 
         function LoginScreen({ onLogin }) {
-            const [role, setRole] = useState('student');
-            const [name, setName] = useState('');
-            const [password, setPassword] = useState('');
-            const [kelas, setKelas] = useState('');
-            const [absen, setAbsen] = useState('');
+            const [isAdmin, setIsAdmin] = useState(false);
+            const [form, setForm] = useState({ name: '', pass: '', kelas: '', absen: '' });
 
-            const handleStudentLogin = () => {
-                if (name && kelas && absen) {
-                    onLogin(name.toUpperCase(), 'student', null, { kelas, absen });
+            const handleSubmit = () => {
+                if (isAdmin) {
+                    if (form.pass === 'admin123') onLogin('Guru Admin', 'admin');
+                    else alert('Password salah!');
                 } else {
-                    alert("Mohon lengkapi Nama, Kelas, dan No Absen!");
+                    if (form.name && form.kelas && form.absen) onLogin(form.name.toUpperCase(), 'student', { kelas: form.kelas, absen: form.absen });
+                    else alert('Lengkapi data siswa!');
                 }
             };
 
             return (
-                <div className="flex justify-center items-center min-h-[80vh]">
-                    <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md border border-slate-200">
-                        <div className="text-center mb-6">
-                            <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3 text-indigo-600">
-                                <Icon path={Icons.Brain} className="w-8 h-8" />
+                <div className="min-h-screen bg-slate-200 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-md shadow-lg w-full max-w-sm overflow-hidden border-t-4 border-cbtBlue">
+                        <div className="bg-slate-50 p-6 text-center border-b border-slate-200">
+                            <h1 className="text-xl font-bold text-slate-800 uppercase tracking-tight">CBT Informatika</h1>
+                            <p className="text-xs text-slate-500 mt-1">Computer Based Test</p>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <div className="flex bg-slate-100 p-1 rounded mb-2">
+                                <button onClick={() => setIsAdmin(false)} className={`flex-1 py-1.5 text-xs font-bold rounded transition ${!isAdmin ? 'bg-white text-cbtBlue shadow-sm' : 'text-slate-500'}`}>SISWA</button>
+                                <button onClick={() => setIsAdmin(true)} className={`flex-1 py-1.5 text-xs font-bold rounded transition ${isAdmin ? 'bg-white text-cbtBlue shadow-sm' : 'text-slate-500'}`}>GURU</button>
                             </div>
-                            <h2 className="text-2xl font-bold text-slate-800">CBT Informatika</h2>
-                            <p className="text-slate-500">Jejak Digital & Keamanan Siber</p>
-                        </div>
 
-                        <div className="flex bg-slate-100 p-1 rounded-lg mb-6">
-                            <button onClick={() => setRole('student')} className={`flex-1 py-2 text-sm font-medium rounded-md transition ${role === 'student' ? 'bg-white shadow text-indigo-600' : 'text-slate-500'}`}>Siswa</button>
-                            <button onClick={() => setRole('admin')} className={`flex-1 py-2 text-sm font-medium rounded-md transition ${role === 'admin' ? 'bg-white shadow text-indigo-600' : 'text-slate-500'}`}>Guru Admin</button>
-                        </div>
-
-                        {role === 'student' ? (
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Nama Lengkap</label>
-                                    <div className="relative">
-                                        <div className="absolute left-3 top-2.5 text-slate-400"><Icon path={Icons.User} className="w-5 h-5"/></div>
-                                        <input type="text" value={name} onChange={e => setName(e.target.value.toUpperCase())} className="w-full pl-10 p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none uppercase" placeholder="NAMA SISWA" />
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
+                            {!isAdmin ? (
+                                <>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Kelas</label>
-                                        <div className="relative">
-                                            <div className="absolute left-3 top-2.5 text-slate-400"><Icon path={Icons.GraduationCap} className="w-5 h-5"/></div>
-                                            <select value={kelas} onChange={e => setKelas(e.target.value)} className="w-full pl-10 p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                                                <option value="">Pilih</option>
-                                                <option value="VIII-A">VIII-A</option>
-                                                <option value="VIII-B">VIII-B</option>
-                                                <option value="VIII-C">VIII-C</option>
-                                                <option value="VIII-D">VIII-D</option>
-                                                <option value="VIII-E">VIII-E</option>
-                                                <option value="VIII-F">VIII-F</option>
-                                                <option value="VIII-G">VIII-G</option>
-                                                <option value="VIII-H">VIII-H</option>
+                                        <label className="block text-xs font-bold text-slate-600 mb-1">Nama Lengkap</label>
+                                        <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value.toUpperCase()})} className="w-full p-2 text-sm border border-slate-300 rounded focus:border-cbtBlue focus:ring-1 focus:ring-cbtBlue outline-none uppercase" placeholder="Masukkan Nama" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-600 mb-1">Kelas</label>
+                                            <select value={form.kelas} onChange={e => setForm({...form, kelas: e.target.value})} className="w-full p-2 text-sm border border-slate-300 rounded focus:border-cbtBlue outline-none bg-white">
+                                                <option value="">- Pilih -</option>
+                                                {['VIII-A','VIII-B','VIII-C','VIII-D','VIII-E','VIII-F','VIII-G','VIII-H'].map(k => <option key={k} value={k}>{k}</option>)}
                                             </select>
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Absen</label>
-                                        <div className="relative">
-                                            <div className="absolute left-3 top-2.5 text-slate-400"><Icon path={Icons.Hash} className="w-5 h-5"/></div>
-                                            <input type="number" value={absen} onChange={e => setAbsen(e.target.value)} className="w-full pl-10 p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="1-40" />
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-600 mb-1">Absen</label>
+                                            <input type="number" value={form.absen} onChange={e => setForm({...form, absen: e.target.value})} className="w-full p-2 text-sm border border-slate-300 rounded focus:border-cbtBlue outline-none" placeholder="1-40" />
                                         </div>
                                     </div>
-                                </div>
-                                <button onClick={handleStudentLogin} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-bold shadow-lg transition transform hover:scale-[1.02]">Mulai Ujian</button>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
+                                </>
+                            ) : (
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Password Admin</label>
-                                    <div className="relative">
-                                        <div className="absolute left-3 top-2.5 text-slate-400"><Icon path={Icons.Lock} className="w-5 h-5"/></div>
-                                        <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full pl-10 p-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Masukkan Kode..." />
-                                    </div>
+                                    <label className="block text-xs font-bold text-slate-600 mb-1">Password Admin</label>
+                                    <input type="password" value={form.pass} onChange={e => setForm({...form, pass: e.target.value})} className="w-full p-2 text-sm border border-slate-300 rounded focus:border-cbtBlue outline-none" />
                                 </div>
-                                <button onClick={() => onLogin('Admin', 'admin', password)} className="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-lg font-bold shadow-lg">Masuk Panel Guru</button>
-                            </div>
-                        )}
+                            )}
+                            <button onClick={handleSubmit} className="w-full py-2.5 bg-cbtBlue hover:bg-blue-700 text-white rounded font-bold text-sm shadow-sm mt-4">LOGIN</button>
+                        </div>
+                        <div className="bg-slate-50 p-3 text-center text-[10px] text-slate-400 border-t border-slate-200">
+                            &copy; 2024 Ujian Berbasis Komputer
+                        </div>
                     </div>
                 </div>
             );
@@ -262,251 +187,238 @@
 
         function StudentDashboard({ user, onStart }) {
             return (
-                <div className="max-w-2xl mx-auto mt-12 bg-white p-8 rounded-xl shadow-lg border border-slate-200 text-center">
-                    <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-600">
-                        <Icon path={Icons.User} className="w-10 h-10" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-slate-800">Halo, {user.name}</h2>
-                    <p className="text-slate-500 mb-6 font-medium">Kelas {user.kelas} | No. Absen {user.absen}</p>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-left">
-                         <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                            <span className="text-xs font-bold text-slate-400 uppercase">Jumlah Soal</span>
-                            <p className="text-xl font-bold text-slate-800">25 Butir</p>
-                         </div>
-                         <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                            <span className="text-xs font-bold text-slate-400 uppercase">Waktu</span>
-                            <p className="text-xl font-bold text-slate-800">40 Menit</p>
-                         </div>
-                         <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                            <span className="text-xs font-bold text-slate-400 uppercase">Sistem</span>
-                            <p className="text-xl font-bold text-slate-800">Acak Terstruktur</p>
-                         </div>
-                    </div>
+                <div className="min-h-screen bg-slate-200 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-md shadow-lg w-full max-w-lg overflow-hidden border border-slate-200">
+                        <div className="bg-cbtBlue p-4 text-white flex items-center justify-between">
+                            <h2 className="font-bold text-lg">Konfirmasi Data</h2>
+                            <Icon path={Icons.User} className="w-5 h-5 opacity-80" />
+                        </div>
+                        <div className="p-6">
+                            <table className="w-full text-sm mb-6">
+                                <tbody>
+                                    <tr className="border-b border-slate-100"><td className="py-2 text-slate-500 w-32">Nama Peserta</td><td className="py-2 font-bold">{user.name}</td></tr>
+                                    <tr className="border-b border-slate-100"><td className="py-2 text-slate-500">Kelas / Absen</td><td className="py-2 font-bold">{user.kelas} / {user.absen}</td></tr>
+                                    <tr className="border-b border-slate-100"><td className="py-2 text-slate-500">Mata Pelajaran</td><td className="py-2 font-bold">Informatika (Jejak Digital)</td></tr>
+                                    <tr className="border-b border-slate-100"><td className="py-2 text-slate-500">Jumlah Soal</td><td className="py-2 font-bold">25 Butir</td></tr>
+                                    <tr><td className="py-2 text-slate-500">Waktu</td><td className="py-2 font-bold">40 Menit</td></tr>
+                                </tbody>
+                            </table>
+                            
+                            <div className="bg-yellow-50 border border-yellow-200 p-3 rounded text-xs text-yellow-800 mb-6">
+                                <strong>Petunjuk:</strong> Klik tombol <strong>MULAI</strong> jika data sudah benar. Waktu akan berjalan otomatis.
+                            </div>
 
-                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-yellow-800 text-sm text-left mb-6">
-                        <strong>Perhatian:</strong> Soal akan diacak dari bank soal dengan komposisi: PG (Awal), Menjodohkan (Tengah), Uraian (Akhir).
+                            <button onClick={onStart} className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded font-bold text-sm shadow-sm">MULAI UJIAN</button>
+                        </div>
                     </div>
-
-                    <button onClick={onStart} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full md:w-auto">
-                        Mulai Mengerjakan
-                    </button>
                 </div>
             );
         }
 
-        function ExamInterface({ questions, answers, setAnswers, onSubmit, timeLeft, isSubmitting }) {
-            const [currentIndex, setCurrentIndex] = useState(0);
-            const [dragOver, setDragOver] = useState(false);
-
-            const formatTime = (s) => {
-                const m = Math.floor(s / 60);
-                const sc = s % 60;
-                return `${m}:${sc < 10 ? '0' : ''}${sc}`;
-            };
-
-            const handleDragStart = (e, index) => {
-                e.dataTransfer.setData("text/plain", index);
-            };
-
-            const handleDragOver = (e) => {
-                e.preventDefault();
-                setDragOver(true);
-            };
-
-            const handleDragLeave = () => {
-                setDragOver(false);
-            };
-
-            const handleDrop = (e) => {
-                e.preventDefault();
-                setDragOver(false);
-                const draggedIndex = parseInt(e.dataTransfer.getData("text/plain"));
-                if (!isNaN(draggedIndex)) {
-                    setAnswers({...answers, [questions[currentIndex].id]: draggedIndex});
-                }
-            };
-
-            if (isSubmitting) {
+        function ExamInterface({ questions, answers, setAnswers, onSubmit, timeLeft, currentIndex, setCurrentIndex, isSubmitting }) {
+            const [drawerOpen, setDrawerOpen] = useState(false);
+            const [selectedAnswer, setSelectedAnswer] = useState(null); 
+            
+            // --- SAFETY CHECK (Mencegah Crash jika questions kosong) ---
+            if (!questions || questions.length === 0 || !questions[currentIndex]) {
                 return (
-                    <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                        <div className="animate-spin text-indigo-600 mb-4"><Icon path={Icons.Loader} className="w-12 h-12" /></div>
-                        <h3 className="text-xl font-bold text-slate-700">Sedang Mengirim Jawaban...</h3>
-                        <p className="text-slate-500">Mohon jangan tutup halaman ini.</p>
+                    <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center p-4">
+                        <div className="w-12 h-12 border-4 border-cbtBlue border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="text-slate-600 font-bold">Memuat Soal...</p>
+                        <button onClick={() => { localStorage.removeItem('cbt_sess_v4'); window.location.reload(); }} className="mt-4 text-xs text-blue-500 hover:underline">Reset & Refresh</button>
                     </div>
                 );
             }
 
-            const currentQ = questions[currentIndex];
-            const isLastQuestion = currentIndex === questions.length - 1;
+            const q = questions[currentIndex];
+            const isLast = currentIndex === questions.length - 1;
             const isFirstQuestion = currentIndex === 0;
 
-            const handleNext = () => {
-                if (!isLastQuestion) setCurrentIndex(prev => prev + 1);
+            const formatTime = s => {
+                const m = Math.floor(s/60);
+                const secs = s%60;
+                return `${m < 10 ? '0'+m : m}:${secs < 10 ? '0'+secs : secs}`;
             };
 
-            const handlePrev = () => {
-                if (!isFirstQuestion) setCurrentIndex(prev => prev - 1);
+            const handleNext = () => !isLast && setCurrentIndex(currentIndex + 1);
+            const handlePrev = () => !isFirstQuestion && setCurrentIndex(currentIndex - 1);
+
+            // Menjodohkan Logic (Compact Click)
+            const handleMatchClick = (text) => setSelectedAnswer(selectedAnswer === text ? null : text);
+            const handleSlotClick = (idx) => {
+                if (!selectedAnswer) return;
+                const prev = answers[q.id] || {};
+                setAnswers({ ...answers, [q.id]: { ...prev, [idx]: selectedAnswer } });
+                setSelectedAnswer(null);
             };
+            const removeMatch = (idx) => {
+                const prev = { ...answers[q.id] }; delete prev[idx];
+                setAnswers({ ...answers, [q.id]: prev });
+            };
+
+            if (isSubmitting) return (
+                <div className="fixed inset-0 bg-slate-900/80 z-50 flex flex-col items-center justify-center text-white">
+                    <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin mb-3"></div>
+                    <span className="font-bold text-sm">Menyimpan Jawaban...</span>
+                </div>
+            );
 
             return (
-                <div className="flex flex-col md:flex-row gap-6 items-start max-w-6xl mx-auto p-4">
-                    {/* Main Question Area */}
-                    <div className="flex-1 w-full space-y-6 pb-10">
-                        {/* Single Question Card */}
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 min-h-[400px] flex flex-col">
-                            <div className="flex gap-4 mb-4">
-                                <span className="flex-shrink-0 w-10 h-10 bg-indigo-100 text-indigo-700 font-bold rounded-lg flex items-center justify-center text-lg">{currentIndex + 1}</span>
-                                <div className="flex-1">
-                                    <p className="font-medium text-lg text-slate-800 leading-relaxed">{currentQ.question}</p>
-                                    <div className="flex gap-2 mt-2">
-                                        {currentQ.category === 'essay' && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded font-medium">Uraian</span>}
-                                        {currentQ.category === 'match' && <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded font-medium">Menjodohkan (Geser)</span>}
-                                        {currentQ.category === 'bs' && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-medium">Benar/Salah</span>}
-                                        {currentQ.category === 'mc' && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">Pilihan Ganda</span>}
-                                    </div>
+                <div className="h-screen flex flex-col bg-slate-100 font-sans text-sm">
+                    {/* HEADER (Compact) */}
+                    <header className="bg-cbtBlue text-white h-12 flex items-center justify-between px-3 shadow-md shrink-0 z-20">
+                        <div className="flex items-center gap-2">
+                            <span className="font-bold text-lg">CBT</span>
+                            <span className="bg-blue-500 px-2 py-0.5 rounded text-xs">Informatika</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-blue-700/50 px-2 py-1 rounded">
+                            <Icon path={Icons.Clock} className="w-4 h-4" />
+                            <span className={`font-mono font-bold ${timeLeft < 300 ? 'text-yellow-300 animate-pulse' : ''}`}>{formatTime(timeLeft)}</span>
+                        </div>
+                    </header>
+
+                    {/* MAIN LAYOUT */}
+                    <div className="flex-1 flex overflow-hidden relative">
+                        
+                        {/* SIDEBAR (Responsive Drawer) */}
+                        <div className={`absolute inset-y-0 left-0 w-64 bg-white shadow-xl transform transition-transform z-30 lg:relative lg:transform-none lg:w-72 lg:shadow-none lg:border-r border-slate-300 flex flex-col ${drawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                            <div className="p-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center lg:hidden">
+                                <span className="font-bold text-slate-700">Daftar Soal</span>
+                                <button onClick={()=>setDrawerOpen(false)} className="text-slate-500"><Icon path={Icons.X} className="w-5 h-5"/></button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-3">
+                                <div className="grid grid-cols-5 gap-2">
+                                    {questions.map((qn, idx) => {
+                                        let filled = qn.type === 'complex_match' ? (answers[qn.id] && Object.keys(answers[qn.id]).length === 4) : (answers[qn.id] !== undefined && answers[qn.id] !== "");
+                                        return (
+                                            <button key={qn.id} onClick={()=>{setCurrentIndex(idx); setDrawerOpen(false);}}
+                                                className={`h-8 w-full rounded border text-xs font-bold flex items-center justify-center transition
+                                                    ${idx === currentIndex ? 'bg-cbtBlue text-white border-cbtBlue' : 
+                                                      filled ? 'bg-green-100 text-green-700 border-green-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}
+                                                `}>{idx+1}</button>
+                                        )
+                                    })}
                                 </div>
                             </div>
+                            <div className="p-3 border-t border-slate-200 bg-slate-50 text-[10px] text-center text-slate-500">
+                                Hijau: Dijawab | Biru: Aktif
+                            </div>
+                        </div>
+                        {drawerOpen && <div className="fixed inset-0 bg-black/50 z-20 lg:hidden" onClick={()=>setDrawerOpen(false)}></div>}
 
-                            <div className="flex-1 pl-0 md:pl-14">
-                                {currentQ.category === 'match' ? (
-                                    <div className="space-y-6">
-                                        {/* Drop Zone */}
-                                        <div 
-                                            onDragOver={handleDragOver}
-                                            onDragLeave={handleDragLeave}
-                                            onDrop={handleDrop}
-                                            className={`p-6 border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center transition-all duration-200 min-h-[120px] drop-zone ${dragOver ? 'active' : 'border-slate-300 bg-slate-50'}`}
-                                        >
-                                            {answers[currentQ.id] !== undefined ? (
-                                                <div className="bg-indigo-600 text-white p-4 rounded-lg shadow-md w-full max-w-md font-bold flex items-center justify-between">
-                                                    <span>{currentQ.options[answers[currentQ.id]]}</span>
-                                                    <button onClick={(e) => { e.stopPropagation(); setAnswers({...answers, [currentQ.id]: undefined}); }} className="ml-2 hover:bg-indigo-700 rounded p-1"><Icon path={Icons.X} className="w-4 h-4 text-white"/></button>
-                                                </div>
-                                            ) : (
-                                                <div className="text-slate-400 pointer-events-none">
-                                                    <Icon path={Icons.Move} className="w-8 h-8 mx-auto mb-2 opacity-50"/>
-                                                    <p className="font-medium text-sm">Geser balok jawaban yang benar ke kotak ini</p>
-                                                </div>
-                                            )}
-                                        </div>
+                        {/* QUESTION AREA */}
+                        <main className="flex-1 overflow-y-auto bg-slate-200 p-2 md:p-4">
+                            <div className="bg-white rounded shadow-sm border border-slate-300 min-h-full flex flex-col">
+                                {/* Question Header */}
+                                <div className="p-3 border-b border-slate-200 bg-slate-50 flex justify-between items-center sticky top-0 z-10">
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={()=>setDrawerOpen(true)} className="lg:hidden p-1.5 bg-white border border-slate-300 rounded text-slate-600"><Icon path={Icons.Menu} className="w-5 h-5"/></button>
+                                        <span className="font-bold text-slate-700">Soal No. {currentIndex + 1}</span>
+                                    </div>
+                                    <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-200 text-slate-600 rounded uppercase border border-slate-300">{q.type === 'complex_match' ? 'MENJODOHKAN' : q.type === 'essay' ? 'URAIAN' : 'PG'}</span>
+                                </div>
 
-                                        {/* Draggable Options */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            {currentQ.options.map((opt, oIdx) => (
-                                                <div 
-                                                    key={oIdx}
-                                                    draggable={true}
-                                                    onDragStart={(e) => handleDragStart(e, oIdx)}
-                                                    onClick={() => setAnswers({...answers, [currentQ.id]: oIdx})} // Keep click for mobile fallback
-                                                    className={`p-4 rounded-lg border bg-white shadow-sm hover:shadow-md transition-all draggable-source 
-                                                        ${answers[currentQ.id] === oIdx ? 'opacity-50 ring-2 ring-indigo-200' : 'border-slate-200'}
-                                                    `}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="bg-slate-100 p-2 rounded text-slate-500"><Icon path={Icons.Move} className="w-4 h-4"/></div>
-                                                        <span className="font-medium text-slate-700">{opt}</span>
+                                {/* Question Body */}
+                                <div className="p-4 md:p-6 flex-1 text-base">
+                                    <p className="mb-5 leading-relaxed font-medium text-slate-800 question-text">{q.question}</p>
+
+                                    {/* --- TIPE: PILIHAN GANDA --- */}
+                                    {q.type === 'choice' && (
+                                        <div className="space-y-2">
+                                            {q.options.map((opt, idx) => (
+                                                <div key={idx} onClick={() => setAnswers({...answers, [q.id]: idx})} 
+                                                    className={`flex items-start gap-3 p-3 rounded border cursor-pointer hover:bg-slate-50 transition ${answers[q.id] === idx ? 'bg-blue-50 border-cbtBlue ring-1 ring-cbtBlue' : 'border-slate-300 bg-white'}`}>
+                                                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${answers[q.id] === idx ? 'border-cbtBlue bg-cbtBlue' : 'border-slate-400'}`}>
+                                                        {answers[q.id] === idx && <div className="w-2 h-2 bg-white rounded-full"></div>}
                                                     </div>
+                                                    <span className={`option-text ${answers[q.id] === idx ? 'font-semibold text-cbtBlue' : 'text-slate-700'}`}>{opt}</span>
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
-                                ) : currentQ.type === 'choice' ? (
-                                    <div className="space-y-3">
-                                        {currentQ.options.map((opt, oIdx) => (
-                                            <button 
-                                                key={oIdx}
-                                                onClick={() => setAnswers({...answers, [currentQ.id]: oIdx})}
-                                                className={`w-full text-left p-4 rounded-lg border transition flex items-center gap-3 ${answers[currentQ.id] === oIdx ? 'bg-indigo-50 border-indigo-500 text-indigo-800 font-medium ring-1 ring-indigo-500' : 'hover:bg-slate-50 border-slate-200 text-slate-600'}`}
-                                            >
-                                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 ${answers[currentQ.id] === oIdx ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'}`}>
-                                                    {answers[currentQ.id] === oIdx && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                                    )}
+
+                                    {/* --- TIPE: MENJODOHKAN (COMPACT CLICK) --- */}
+                                    {q.type === 'complex_match' && (
+                                        <div className="space-y-4">
+                                            {/* Target Area */}
+                                            <div className="grid gap-2">
+                                                {q.pairs.map((pair, idx) => {
+                                                    const filled = answers[q.id]?.[idx];
+                                                    return (
+                                                        <div key={idx} className="flex flex-col sm:flex-row border border-slate-300 rounded bg-white overflow-hidden">
+                                                            <div className="sm:w-1/2 p-2 bg-slate-50 border-b sm:border-b-0 sm:border-r border-slate-300 flex items-center gap-2 text-sm font-medium">
+                                                                <span className="bg-slate-200 text-slate-600 text-xs w-5 h-5 flex items-center justify-center rounded font-bold">{String.fromCharCode(65+idx)}</span>
+                                                                {pair.left}
+                                                            </div>
+                                                            <div onClick={() => handleSlotClick(idx)} 
+                                                                className={`sm:w-1/2 p-2 min-h-[40px] flex items-center justify-center cursor-pointer transition relative 
+                                                                    ${filled ? 'bg-blue-50' : 'bg-white hover:bg-slate-50'}
+                                                                    ${selectedAnswer && !filled ? 'bg-yellow-50 border-2 border-yellow-400 border-dashed m-1 rounded' : ''}
+                                                                `}>
+                                                                {filled ? (
+                                                                    <div className="flex justify-between w-full items-center px-2">
+                                                                        <span className="text-sm font-bold text-blue-700">{filled}</span>
+                                                                        <button onClick={(e)=>{e.stopPropagation(); removeMatch(idx)}} className="text-red-400 hover:text-red-600 ml-2"><Icon path={Icons.X} className="w-4 h-4"/></button>
+                                                                    </div>
+                                                                ) : <span className={`text-xs uppercase font-bold ${selectedAnswer ? 'text-yellow-600 animate-pulse' : 'text-slate-300'}`}>{selectedAnswer ? "PILIH SINI" : "KOSONG"}</span>}
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                            
+                                            {/* Source Options */}
+                                            <div className="bg-slate-100 p-3 rounded border border-slate-300">
+                                                <p className="text-xs font-bold text-slate-500 mb-2 uppercase text-center">Pilihan Jawaban (Klik untuk Memilih)</p>
+                                                <div className="flex flex-wrap gap-2 justify-center">
+                                                    {q.shuffledAnswers.map((ans, i) => {
+                                                        const isUsed = Object.values(answers[q.id] || {}).includes(ans);
+                                                        return (
+                                                            <button key={i} disabled={isUsed} onClick={() => setSelectedAnswer(selectedAnswer === ans ? null : ans)}
+                                                                className={`px-3 py-1.5 rounded border text-sm font-semibold shadow-sm transition
+                                                                    ${isUsed ? 'bg-slate-200 text-slate-400 border-slate-200 cursor-not-allowed' : 
+                                                                      selectedAnswer === ans ? 'bg-cbtBlue text-white border-blue-800 ring-2 ring-blue-300' : 'bg-white text-slate-700 border-slate-300 hover:border-blue-500'}
+                                                                `}>
+                                                                {ans}
+                                                            </button>
+                                                        )
+                                                    })}
                                                 </div>
-                                                {opt}
-                                            </button>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <textarea 
-                                        value={answers[currentQ.id] || ''}
-                                        onChange={e => setAnswers({...answers, [currentQ.id]: e.target.value})}
-                                        className="w-full p-4 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none h-48 resize-none text-slate-700"
-                                        placeholder="Ketik jawaban uraian Anda di sini..."
-                                    ></textarea>
-                                )}
-                            </div>
+                                            </div>
+                                        </div>
+                                    )}
 
-                            {/* Navigation Buttons */}
-                            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
-                                <button 
-                                    onClick={handlePrev}
-                                    disabled={isFirstQuestion}
-                                    className={`px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 transition ${isFirstQuestion ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                                    Sebelumnya
-                                </button>
+                                    {/* --- TIPE: URAIAN --- */}
+                                    {q.type === 'essay' && (
+                                        <textarea 
+                                            value={answers[q.id] || ''}
+                                            onChange={e => setAnswers({...answers, [q.id]: e.target.value})}
+                                            className="w-full h-48 p-3 text-sm border border-slate-300 rounded focus:border-cbtBlue focus:ring-1 focus:ring-cbtBlue outline-none resize-none leading-relaxed"
+                                            placeholder="Ketik jawaban Anda di sini..."
+                                        ></textarea>
+                                    )}
+                                </div>
 
-                                {isLastQuestion ? (
-                                    <button 
-                                        onClick={() => { if(confirm("Yakin ingin mengakhiri ulangan? Pastikan semua jawaban sudah terisi.")) onSubmit(); }}
-                                        className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold shadow-md transition flex items-center gap-2"
-                                    >
-                                        <Icon path={Icons.CheckCircle} className="w-5 h-5"/> Akhiri Ulangan
-                                    </button>
-                                ) : (
-                                    <button 
-                                        onClick={handleNext}
-                                        className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition flex items-center gap-2"
-                                    >
-                                        Selanjutnya
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                                {/* FOOTER BUTTONS */}
+                                <div className="p-3 border-t border-slate-200 bg-slate-50 flex justify-between items-center sticky bottom-0 z-10">
+                                    {isFirstQuestion ? <div></div> : (
+                                        <button onClick={handlePrev} className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded font-bold text-sm shadow-sm hover:bg-slate-50 flex items-center gap-1">
+                                            <Icon path={Icons.Left} className="w-4 h-4"/> Prev
+                                        </button>
+                                    )}
 
-                    {/* Sidebar */}
-                    <div className="w-full md:w-80 flex-shrink-0 space-y-4 sticky top-4">
-                        <div className="bg-white p-5 rounded-xl shadow border border-slate-200 text-center">
-                            <span className="text-xs font-bold text-slate-400 uppercase flex items-center justify-center gap-1 mb-1">
-                                <Icon path={Icons.Clock} className="w-3 h-3"/> Sisa Waktu
-                            </span>
-                            <div className={`text-3xl font-mono font-bold ${timeLeft < 300 ? 'text-red-500 animate-pulse' : 'text-slate-800'}`}>
-                                {formatTime(timeLeft)}
+                                    {isLast ? (
+                                        <button onClick={() => confirm("Yakin ingin selesai?") && onSubmit()} className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-bold text-sm shadow-sm flex items-center gap-1">
+                                            SELESAI <Icon path={Icons.Check} className="w-4 h-4"/>
+                                        </button>
+                                    ) : (
+                                        <button onClick={handleNext} className="px-6 py-2 bg-cbtBlue hover:bg-blue-700 text-white rounded font-bold text-sm shadow-sm flex items-center gap-1">
+                                            Next <Icon path={Icons.Right} className="w-4 h-4"/>
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-
-                        <div className="bg-white p-5 rounded-xl shadow border border-slate-200">
-                            <h4 className="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2">
-                                <Icon path={Icons.FileText} className="w-4 h-4"/> Navigasi Soal
-                            </h4>
-                            <div className="grid grid-cols-5 gap-2 max-h-[350px] overflow-y-auto pr-1">
-                                {questions.map((q, idx) => {
-                                    const isAnswered = answers[q.id] !== undefined && answers[q.id] !== "";
-                                    const isActive = idx === currentIndex;
-                                    
-                                    return (
-                                    <button 
-                                        key={q.id}
-                                        onClick={() => setCurrentIndex(idx)}
-                                        className={`aspect-square flex items-center justify-center rounded-lg text-sm font-bold transition border-2 
-                                            ${isActive ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-transparent'}
-                                            ${!isActive && isAnswered ? 'bg-indigo-600 text-white' : ''}
-                                            ${!isActive && !isAnswered ? 'bg-slate-100 text-slate-500 hover:bg-slate-200' : ''}
-                                        `}
-                                    >
-                                        {idx + 1}
-                                    </button>
-                                )})}
-                            </div>
-                            <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500 justify-center">
-                                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-indigo-600 rounded"></div> Dijawab</div>
-                                <div className="flex items-center gap-1"><div className="w-3 h-3 border-2 border-indigo-600 bg-indigo-50 rounded"></div> Aktif</div>
-                                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-slate-100 rounded"></div> Kosong</div>
-                            </div>
-                        </div>
+                        </main>
                     </div>
                 </div>
             );
@@ -515,418 +427,168 @@
         function ResultScreen({ score, user, onHome }) {
             const isLulus = score >= 75;
             return (
-                <div className="flex justify-center items-center min-h-[80vh] p-4">
-                    <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-center border border-slate-100 relative overflow-hidden">
-                        <div className={`absolute top-0 left-0 w-full h-2 ${isLulus ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                        <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 ${isLulus ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                            <Icon path={isLulus ? Icons.CheckCircle : Icons.XCircle} className="w-10 h-10" />
+                <div className="min-h-screen bg-slate-200 flex items-center justify-center p-4">
+                    <div className="bg-white rounded shadow-lg p-8 max-w-sm w-full text-center border-t-4 border-cbtBlue">
+                        <h2 className="text-xl font-bold text-slate-800 mb-2">UJIAN SELESAI</h2>
+                        <p className="text-sm text-slate-500 mb-6">Jawaban Anda telah tersimpan.</p>
+                        
+                        <div className="bg-slate-50 border border-slate-200 rounded p-4 mb-6">
+                            <span className="block text-xs font-bold text-slate-400 uppercase">Skor Anda</span>
+                            <span className={`block text-5xl font-black mt-2 ${isLulus ? 'text-green-600' : 'text-red-600'}`}>{score}</span>
+                            <span className="block text-xs font-bold mt-2 px-2 py-1 rounded inline-block bg-slate-200 text-slate-600">KKM: 75</span>
                         </div>
                         
-                        <h2 className="text-3xl font-bold text-slate-800 mb-2">{isLulus ? "Selamat! Anda Lulus" : "Belum Lulus"}</h2>
-                        <p className="text-slate-500 mb-6">Terima kasih telah mengikuti ujian.</p>
-                        
-                        <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-8">
-                            <div className="flex justify-between items-center mb-2 text-sm text-slate-500">
-                                <span>{user.name}</span>
-                                <span>{user.kelas}</span>
-                            </div>
-                            <div className="text-6xl font-bold text-slate-800">{score}</div>
-                            <div className="text-xs text-slate-400 mt-1 uppercase tracking-wide">Nilai Akhir</div>
-                        </div>
-
-                        <button onClick={onHome} className="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-lg font-bold">Kembali ke Halaman Login</button>
+                        <button onClick={onHome} className="w-full py-2 bg-slate-800 text-white rounded font-bold text-sm hover:bg-slate-900">KELUAR</button>
                     </div>
                 </div>
             );
         }
 
-        function ViewDetailModal({ resultId, onClose }) {
-            const [details, setDetails] = useState([]);
-            const [loading, setLoading] = useState(true);
-
-            useEffect(() => {
-                fetchDetails();
-            }, []);
-
-            const fetchDetails = async () => {
-                if (supabaseClient) {
-                    const { data, error } = await supabaseClient
-                        .from('student_answers')
-                        .select('*')
-                        .eq('exam_result_id', resultId);
-                    if (!error) setDetails(data);
-                }
-                setLoading(false);
-            };
-
-            return (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-                        <div className="p-6 border-b flex justify-between items-center bg-slate-50 rounded-t-xl">
-                            <h3 className="font-bold text-lg text-slate-800">Detail Jawaban Siswa</h3>
-                            <button onClick={onClose} className="text-slate-400 hover:text-red-500"><Icon path={Icons.X} className="w-6 h-6"/></button>
-                        </div>
-                        <div className="overflow-y-auto p-6 space-y-6 flex-1">
-                            {loading ? <p className="text-center">Memuat...</p> : details.length === 0 ? <p className="text-center text-slate-500">Tidak ada detail jawaban (Mode Offline/Lama).</p> : (
-                                details.map((ans, idx) => (
-                                    <div key={idx} className="border-b pb-4 last:border-0">
-                                        <div className="flex justify-between mb-2">
-                                            <span className="font-bold text-slate-700">Soal {idx + 1} ({ans.question_type === 'choice' ? 'PG' : 'Essay'})</span>
-                                            <span className={`px-2 py-0.5 text-xs rounded font-bold ${ans.is_correct || ans.score > 5 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                Skor: {ans.score}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm text-slate-600 mb-2">{ans.question_text}</p>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                            <div className="bg-slate-50 p-3 rounded">
-                                                <p className="text-xs text-slate-400 uppercase font-bold mb-1">Jawaban Siswa</p>
-                                                <p className="text-slate-800">{ans.student_answer || "-"}</p>
-                                            </div>
-                                            {ans.question_type === 'choice' ? (
-                                                <div className="bg-green-50 p-3 rounded">
-                                                    <p className="text-xs text-green-600 uppercase font-bold mb-1">Kunci Jawaban</p>
-                                                    <p className="text-green-800">{ans.correct_answer}</p>
-                                                </div>
-                                            ) : (
-                                                <div className="bg-blue-50 p-3 rounded">
-                                                    <p className="text-xs text-blue-600 uppercase font-bold mb-1">Feedback AI</p>
-                                                    <p className="text-blue-800">{ans.feedback || "-"}</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
+        // --- ADMIN PANEL (Compact) ---
         function AdminPanel({ onLogout }) {
-            const [results, setResults] = useState([]);
-            const [loading, setLoading] = useState(true);
-            const [selectedResult, setSelectedResult] = useState(null);
-
+            const [data, setData] = useState([]);
             useEffect(() => {
-                fetchResults();
+                if(supabaseClient) supabaseClient.from('exam_results').select('*').order('created_at', { ascending: false }).then(({ data }) => setData(data || []));
+                else setData(JSON.parse(localStorage.getItem('cbt_local_results') || '[]'));
             }, []);
 
-            const fetchResults = async () => {
-                setLoading(true);
-                if (supabaseClient) {
-                    try {
-                        const { data, error } = await supabaseClient
-                            .from('exam_results')
-                            .select('*')
-                            .order('created_at', { ascending: false });
-                        
-                        if (error) throw error;
-                        setResults(data);
-                    } catch (err) {
-                        alert("Gagal ambil data Supabase: " + err.message);
-                        setResults(JSON.parse(localStorage.getItem('cbt_local_results') || '[]'));
-                    }
-                } else {
-                    const localData = JSON.parse(localStorage.getItem('cbt_local_results') || '[]');
-                    setResults(localData);
-                }
-                setLoading(false);
-            };
-
-            const downloadExcel = () => {
-                const worksheet = XLSX.utils.json_to_sheet(results.map(r => ({
-                    Tanggal: new Date(r.created_at || r.date).toLocaleString(),
-                    Nama: r.name,
-                    Kelas: r.kelas,
-                    Absen: r.absen,
-                    Nilai: r.score
-                })));
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Nilai Siswa");
-                XLSX.writeFile(workbook, "Rekap_Nilai_CBT.xlsx");
+            const download = () => {
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Nilai");
+                XLSX.writeFile(wb, "Rekap_Nilai.xlsx");
             };
 
             return (
-                <div className="max-w-6xl mx-auto p-6">
-                    <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                        <div>
-                            <h2 className="text-2xl font-bold text-slate-800">Panel Guru</h2>
-                            <p className="text-slate-500 text-sm">Rekapitulasi Hasil Ujian</p>
-                        </div>
-                        <div className="flex gap-3">
-                            <button onClick={downloadExcel} className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold text-sm">
-                                <Icon path={Icons.Download} className="w-4 h-4" /> Download Excel
-                            </button>
-                            <button onClick={onLogout} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold text-sm">
-                                <Icon path={Icons.LogOut} className="w-4 h-4" /> Keluar
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        {loading ? (
-                            <div className="p-12 text-center text-slate-500">Memuat data...</div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-xs border-b">
-                                        <tr>
-                                            <th className="p-4">Tanggal</th>
-                                            <th className="p-4">Nama Siswa</th>
-                                            <th className="p-4">Kelas</th>
-                                            <th className="p-4 text-center">Absen</th>
-                                            <th className="p-4 text-center">Nilai</th>
-                                            <th className="p-4 text-center">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {results.length === 0 ? (
-                                            <tr><td colSpan="6" className="p-8 text-center text-slate-400 italic">Belum ada data ujian masuk.</td></tr>
-                                        ) : results.map((res, i) => (
-                                            <tr key={i} className="hover:bg-slate-50 transition">
-                                                <td className="p-4 text-slate-500 whitespace-nowrap">{new Date(res.created_at || res.date).toLocaleString()}</td>
-                                                <td className="p-4 font-bold text-slate-800">{res.name}</td>
-                                                <td className="p-4">{res.kelas}</td>
-                                                <td className="p-4 text-center">{res.absen}</td>
-                                                <td className="p-4 text-center">
-                                                    <span className={`px-2 py-1 rounded font-bold text-xs ${res.score >= 75 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                        {res.score}
-                                                    </span>
-                                                </td>
-                                                <td className="p-4 text-center">
-                                                    <button onClick={() => setSelectedResult(res.id)} className="text-indigo-600 hover:text-indigo-800 font-medium text-xs flex items-center justify-center gap-1 mx-auto">
-                                                        <Icon path={Icons.Eye} className="w-4 h-4" /> Lihat Jawaban
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                <div className="min-h-screen bg-slate-100 p-4">
+                    <div className="max-w-5xl mx-auto bg-white rounded shadow-sm border border-slate-200">
+                        <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                            <h2 className="font-bold text-slate-700">PANEL GURU</h2>
+                            <div className="flex gap-2">
+                                <button onClick={download} className="px-3 py-1.5 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700">EXCEL</button>
+                                <button onClick={onLogout} className="px-3 py-1.5 bg-slate-700 text-white rounded text-xs font-bold hover:bg-slate-800">LOGOUT</button>
                             </div>
-                        )}
-                    </div>
-                    
-                    {!supabaseClient && (
-                        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
-                            <strong>Info Mode Demo:</strong> Anda belum memasukkan URL Supabase di kodingan. Data saat ini hanya disimpan di Local Storage browser ini saja. Edit file HTML baris 48 untuk koneksi database.
                         </div>
-                    )}
-
-                    {selectedResult && (
-                        <ViewDetailModal 
-                            resultId={selectedResult} 
-                            onClose={() => setSelectedResult(null)} 
-                        />
-                    )}
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-slate-100 text-slate-600 border-b border-slate-200 font-bold">
+                                    <tr><th className="p-3">Waktu</th><th className="p-3">Nama</th><th className="p-3">Kelas</th><th className="p-3">Nilai</th></tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {data.map((r,i)=>(
+                                        <tr key={i} className="hover:bg-blue-50/50">
+                                            <td className="p-3 text-slate-500">{new Date(r.created_at||r.date).toLocaleString()}</td>
+                                            <td className="p-3 font-bold text-slate-800">{r.name}</td>
+                                            <td className="p-3">{r.kelas}</td>
+                                            <td className="p-3 font-bold text-cbtBlue">{r.score}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             );
         }
-
-        // ==========================================
-        // MAIN APP CONTROLLER
-        // ==========================================
 
         function App() {
-            const [view, setView] = useState('login'); 
-            const [user, setUser] = useState(null);
-            const [questions, setQuestions] = useState([]);
-            const [answers, setAnswers] = useState({});
-            const [score, setScore] = useState(0);
-            const [timeLeft, setTimeLeft] = useState(40 * 60);
-            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [state, setState] = useState({ view: 'login', user: null, questions: [], answers: {}, score: 0, timeLeft: 40*60, currentIndex: 0 });
+            const [submitting, setSubmitting] = useState(false);
+            const [loading, setLoading] = useState(true);
 
+            // Restore Session & Validate (FIXED: WITH LOADING STATE)
             useEffect(() => {
-                // Check local storage for session
-                const savedSession = localStorage.getItem('cbt_session');
-                if (savedSession) {
-                    const sessionData = JSON.parse(savedSession);
-                    setUser(sessionData);
-                    if (sessionData.role === 'admin') {
-                        setView('admin');
-                    } else {
-                        // Restore dashboard view for students
-                        setView('dashboard');
-                    }
+                const s = localStorage.getItem('cbt_sess_v4');
+                if(s) { 
+                    try { 
+                        const parsed = JSON.parse(s);
+                        // SAFETY: Check if questions exist
+                        if(parsed.view === 'exam' && (!parsed.questions || parsed.questions.length === 0)) {
+                            localStorage.removeItem('cbt_sess_v4');
+                        } else {
+                            setState(parsed); 
+                        }
+                    } catch(e) { localStorage.removeItem('cbt_sess_v4'); } 
                 }
+                setLoading(false);
             }, []);
 
             useEffect(() => {
-                if (view === 'exam' && timeLeft > 0) {
-                    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-                    return () => clearInterval(timer);
-                } else if (timeLeft === 0 && view === 'exam') {
-                    submitExam();
-                }
-            }, [timeLeft, view]);
+                if(state.user) localStorage.setItem('cbt_sess_v4', JSON.stringify(state));
+            }, [state]);
 
-            const handleLogin = (name, role, password, extraData) => {
-                if (role === 'admin') {
-                    if (password === 'admin123') {
-                        const adminUser = { name: 'Guru Admin', role: 'admin' };
-                        setUser(adminUser);
-                        localStorage.setItem('cbt_session', JSON.stringify(adminUser));
-                        setView('admin');
-                    } else {
-                        alert("Password Salah!");
-                    }
-                } else {
-                    const studentUser = { name, role, ...extraData };
-                    setUser(studentUser);
-                    localStorage.setItem('cbt_session', JSON.stringify(studentUser));
-                    setView('dashboard');
-                }
-            };
-
-            const handleLogout = () => {
-                localStorage.removeItem('cbt_session');
-                setUser(null);
-                setView('login');
-            };
+            useEffect(() => {
+                if(state.view === 'exam' && state.timeLeft > 0) {
+                    const t = setInterval(() => setState(p => ({...p, timeLeft: p.timeLeft - 1})), 1000);
+                    return () => clearInterval(t);
+                } else if(state.timeLeft === 0 && state.view === 'exam') submit();
+            }, [state.view, state.timeLeft]);
 
             const startExam = () => {
-                // 1. Group by Category
-                const mcPool = INITIAL_QUESTIONS.filter(q => q.category === 'mc');
-                const bsPool = INITIAL_QUESTIONS.filter(q => q.category === 'bs');
-                const matchPool = INITIAL_QUESTIONS.filter(q => q.category === 'match');
-                const essayPool = INITIAL_QUESTIONS.filter(q => q.category === 'essay');
-
-                // 2. Shuffle Each Pool Independently
-                const shuffledMC = shuffleArray(mcPool);
-                const shuffledBS = shuffleArray(bsPool);
-                const shuffledMatch = shuffleArray(matchPool);
-                const shuffledEssay = shuffleArray(essayPool);
-
-                // 3. Select Questions (Total 25)
-                // - Bagian 1: MC (8 Soal)
-                // - Bagian 2: BS (2 Soal) + Match (8 Soal)
-                // - Bagian 3: Essay (7 Soal)
-                const selectedMC = shuffledMC.slice(0, 8);
-                const selectedBS = shuffledBS.slice(0, 2);
-                const selectedMatch = shuffledMatch.slice(0, 8);
-                const selectedEssay = shuffledEssay.slice(0, 7);
-
-                // 4. Combine in Strict Order: MC -> BS -> Match -> Essay
-                const examQuestions = [
-                    ...selectedMC,
-                    ...selectedBS,
-                    ...selectedMatch,
-                    ...selectedEssay
-                ];
-
-                setQuestions(examQuestions);
-                setTimeLeft(40 * 60);
-                setView('exam');
+                const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
+                const qMc = shuffle(INITIAL_QUESTIONS.filter(q => q.category === 'mc')).slice(0, 8);
+                const qBs = shuffle(INITIAL_QUESTIONS.filter(q => q.category === 'bs')).slice(0, 2);
+                const qMatch = shuffle(INITIAL_QUESTIONS.filter(q => q.category === 'match')).slice(0, 5).map(q => ({
+                    ...q, shuffledAnswers: shuffle(q.pairs.map(p => p.right))
+                }));
+                const qEssay = shuffle(INITIAL_QUESTIONS.filter(q => q.category === 'essay')).slice(0, 7);
+                setState(p => ({...p, view: 'exam', questions: [...qMc, ...qBs, ...qMatch, ...qEssay], answers: {}, timeLeft: 40*60, currentIndex: 0}));
             };
 
-            const submitExam = async () => {
-                setIsSubmitting(true);
+            const submit = async () => {
+                setSubmitting(true);
+                let score = 0;
+                // Scoring Logic (Simplified)
+                const qChoice = state.questions.filter(q => q.type === 'choice');
+                const scorePerQ = 60 / (qChoice.length || 1);
+                qChoice.forEach(q => { if(state.answers[q.id] === q.correctAnswer) score += scorePerQ; });
                 
-                // 1. Scoring Logic
-                let pgScore = 0;
-                let essayScore = 0;
-                const scorePerPg = 60 / questions.filter(q => q.type === 'choice').length;
-                const scorePerEssay = 40 / questions.filter(q => q.type === 'essay').length;
-                
-                // Array untuk menampung detail jawaban yang akan disimpan ke DB
-                const answersDetail = [];
-
-                // Proses PG
-                questions.filter(q => q.type === 'choice').forEach(q => {
-                    const isCorrect = answers[q.id] === q.correctAnswer;
-                    if (isCorrect) pgScore += scorePerPg;
-                    
-                    answersDetail.push({
-                        question_id: q.id,
-                        question_type: 'choice',
-                        question_text: q.question,
-                        student_answer: q.options[answers[q.id]] || "Tidak Dijawab", // Simpan teks jawaban
-                        correct_answer: q.options[q.correctAnswer],
-                        is_correct: isCorrect,
-                        score: isCorrect ? Math.round(scorePerPg) : 0,
-                        feedback: null
-                    });
+                const qMatch = state.questions.filter(q => q.type === 'complex_match');
+                const scorePerPair = 40 / ((qMatch.length * 4) || 1);
+                qMatch.forEach(q => {
+                    const ans = state.answers[q.id] || {};
+                    q.pairs.forEach((p, idx) => { if(ans[idx] === p.right) score += scorePerPair; });
                 });
-
-                // Proses Essay (AI Simulation)
-                const essayQs = questions.filter(q => q.type === 'essay');
-                for (let q of essayQs) {
-                    const result = await simulateAIAnalysis(answers[q.id] || "", q.keywords, q.minKeywords);
-                    const realScore = (result.score / 100) * scorePerEssay;
-                    essayScore += realScore;
-
-                    answersDetail.push({
-                        question_id: q.id,
-                        question_type: 'essay',
-                        question_text: q.question,
-                        student_answer: answers[q.id] || "Tidak Dijawab",
-                        correct_answer: "Kata kunci: " + q.keywords.join(", "),
-                        is_correct: result.score > 50,
-                        score: Math.round(realScore),
-                        feedback: result.feedback
-                    });
+                
+                const finalScore = Math.round(score);
+                
+                if(supabaseClient) await supabaseClient.from('exam_results').insert([{ name: state.user.name, kelas: state.user.kelas, absen: state.user.absen, score: finalScore, detail: { raw: state.answers } }]);
+                else {
+                    const local = JSON.parse(localStorage.getItem('cbt_local_results')||'[]');
+                    local.push({ name: state.user.name, kelas: state.user.kelas, score: finalScore, date: new Date() });
+                    localStorage.setItem('cbt_local_results', JSON.stringify(local));
                 }
 
-                const finalScore = Math.round(pgScore + essayScore);
-                setScore(finalScore);
-
-                // 2. Simpan ke Database
-                if (supabaseClient) {
-                    // A. Simpan Header (Rekap)
-                    const { data: resultData, error: resultError } = await supabaseClient
-                        .from('exam_results')
-                        .insert([{
-                            name: user.name,
-                            kelas: user.kelas,
-                            absen: user.absen,
-                            score: finalScore,
-                            detail: { pg: pgScore, essay: essayScore }
-                        }])
-                        .select(); // Penting: select() untuk mendapatkan ID yang baru dibuat
-
-                    if (!resultError && resultData && resultData.length > 0) {
-                        const examId = resultData[0].id;
-                        
-                        // B. Simpan Detail Jawaban (Bulk Insert)
-                        const finalAnswersPayload = answersDetail.map(ans => ({
-                            exam_result_id: examId,
-                            ...ans
-                        }));
-
-                        await supabaseClient.from('student_answers').insert(finalAnswersPayload);
-                    } else {
-                        console.error("Gagal menyimpan rekap:", resultError);
-                    }
-                } else {
-                    // Fallback Local Storage
-                    const localResults = JSON.parse(localStorage.getItem('cbt_local_results') || '[]');
-                    localResults.push({
-                        id: Date.now(), // Fake ID
-                        name: user.name,
-                        kelas: user.kelas,
-                        absen: user.absen,
-                        score: finalScore,
-                        date: new Date().toISOString()
-                    });
-                    localStorage.setItem('cbt_local_results', JSON.stringify(localResults));
-                }
-
-                // Clear session storage on finish
-                localStorage.removeItem('cbt_session');
-
-                setIsSubmitting(false);
-                setView('result');
+                localStorage.removeItem('cbt_sess_v4');
+                setState(p => ({...p, view: 'result', score: finalScore}));
+                setSubmitting(false);
             };
 
-            return (
-                <div className="min-h-screen">
-                    {view === 'login' && <LoginScreen onLogin={handleLogin} />}
-                    {view === 'dashboard' && <StudentDashboard user={user} onStart={startExam} />}
-                    {view === 'exam' && <ExamInterface questions={questions} answers={answers} setAnswers={setAnswers} onSubmit={submitExam} timeLeft={timeLeft} isSubmitting={isSubmitting} />}
-                    {view === 'result' && <ResultScreen score={score} user={user} onHome={() => setView('login')} />}
-                    {view === 'admin' && <AdminPanel onLogout={handleLogout} />}
+            const logout = () => { localStorage.removeItem('cbt_sess_v4'); setState({view:'login', user:null}); };
+
+            // --- LOADING SCREEN (Mencegah Flash Login saat Refresh) ---
+            if(loading) return (
+                <div className="flex h-screen items-center justify-center bg-slate-50 flex-col">
+                    <div className="w-10 h-10 border-4 border-cbtBlue border-t-transparent rounded-full animate-spin mb-3"></div>
+                    <span className="text-slate-500 font-bold text-sm">MEMUAT SESI...</span>
                 </div>
             );
+
+            if(state.view === 'login') return <LoginScreen onLogin={(n,r,d) => setState(p => ({...p, user:{name:n, role:r, ...d}, view: r==='admin'?'admin':'dashboard'}))} />;
+            if(state.view === 'dashboard') return <StudentDashboard user={state.user} onStart={startExam} />;
+            if(state.view === 'exam') return <ExamInterface 
+                questions={state.questions} 
+                answers={state.answers} 
+                setAnswers={a => setState(p => ({...p, answers: a}))} 
+                timeLeft={state.timeLeft} 
+                currentIndex={state.currentIndex} 
+                setCurrentIndex={i => setState(p => ({...p, currentIndex: i}))} 
+                onSubmit={submit} 
+                isSubmitting={submitting} 
+            />;
+            if(state.view === 'result') return <ResultScreen score={state.score} user={state.user} onHome={logout} />;
+            if(state.view === 'admin') return <AdminPanel onLogout={logout} />;
+            return null;
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
